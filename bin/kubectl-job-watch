@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+job_name="$1"
+
+# Follow log for most recently scheduled job, or (newest) running job?
+kubectl logs --follow "jobs/${job_name}"

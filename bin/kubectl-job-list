@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eu
+
+# Print job summary.
+kubectl get jobs --ignore-not-found
