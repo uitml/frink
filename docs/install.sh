@@ -10,5 +10,5 @@ curl -LO "${api_url}/bin/kubectl-job-kill"
 curl -LO "${api_url}/bin/kubectl-job-list"
 curl -LO "${api_url}/bin/kubectl-job-run"
 curl -LO "${api_url}/bin/kubectl-job-watch"
-chmod +x kubectl*
 sudo cp --no-preserve=ownership kubectl* /usr/local/bin/
+sudo chmod 755 /usr/local/bin/kubectl-job-*
