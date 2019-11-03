@@ -18,10 +18,7 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(logsCmd)
-	rootCmd.AddCommand(removeCmd)
-	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(jobCmd)
 
 	disableFlagsInUseLine(rootCmd)
 }
