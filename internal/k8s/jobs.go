@@ -18,6 +18,7 @@ type SimpleJobSpec struct {
 	GPU     uint        `yaml:"gpu"`
 }
 
+// DefaultLogOptions is the default set of options used for retrieving pod logs.
 var DefaultLogOptions = &corev1.PodLogOptions{
 	// TODO: Make these configurable via flags?
 	Follow: true,
@@ -58,6 +59,7 @@ func (spec *SimpleJobSpec) Expand() *batchv1.Job {
 	}
 }
 
+// ListJobs returns all jobs.
 func (kubectx *KubeContext) ListJobs() (*batchv1.JobList, error) {
 	jobs, err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).List(metav1.ListOptions{})
 	if err != nil {
@@ -67,6 +69,7 @@ func (kubectx *KubeContext) ListJobs() (*batchv1.JobList, error) {
 	return jobs, nil
 }
 
+// DeleteJob deletes the job with the given name.
 func (kubectx *KubeContext) DeleteJob(name string) error {
 	deletePolicy := metav1.DeletePropagationBackground
 	deleteOptions := &metav1.DeleteOptions{
@@ -78,11 +81,13 @@ func (kubectx *KubeContext) DeleteJob(name string) error {
 	return err
 }
 
+// CreateJob creates a job with the given specification.
 func (kubectx *KubeContext) CreateJob(job *batchv1.Job) error {
 	_, err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).Create(job)
 	return err
 }
 
+// GetJobLogs returns the pod logs for the job with the given name.
 func (kubectx *KubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
 	getOptions := metav1.GetOptions{}
 	job, err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).Get(name, getOptions)

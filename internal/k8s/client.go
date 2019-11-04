@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// KubeContext represents a concrete Kubernetes API context.
 type KubeContext struct {
 	Client    *kubernetes.Clientset
 	Namespace string
