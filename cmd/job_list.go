@@ -8,9 +8,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.com/uitml/frink/pkg/kube/client"
+	"github.com/uitml/frink/internal/k8s"
 	batchv1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -29,12 +28,12 @@ var listCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List jobs",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clientset, namespace, err := client.ForContext("")
+		kubectx, err := k8s.Client("")
 		if err != nil {
 			return fmt.Errorf("could not get k8s client: %v", err)
 		}
 
-		jobs, err := clientset.BatchV1().Jobs(namespace).List(metav1.ListOptions{})
+		jobs, err := kubectx.ListJobs()
 		if err != nil {
 			return fmt.Errorf("could not list jobs: %v", err)
 		}

@@ -8,11 +8,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/uitml/frink/pkg/kube/client"
-	"github.com/uitml/frink/pkg/types"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"github.com/uitml/frink/internal/k8s"
 )
 
 var logsCmd = &cobra.Command{
@@ -26,40 +22,12 @@ var logsCmd = &cobra.Command{
 
 		name := args[0]
 
-		clientset, namespace, err := client.ForContext("")
+		kubectx, err := k8s.Client("")
 		if err != nil {
 			return fmt.Errorf("unable to get kube client: %v", err)
 		}
 
-		getOptions := metav1.GetOptions{}
-		job, err := clientset.BatchV1().Jobs(namespace).Get(name, getOptions)
-		if err != nil {
-			return fmt.Errorf("unable to get job: %v", err)
-		}
-
-		listOptions := metav1.ListOptions{
-			LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).String(),
-		}
-		pods, err := clientset.CoreV1().Pods(namespace).List(listOptions)
-		if err != nil {
-			return fmt.Errorf("unable to get pods for job: %v", err)
-		}
-
-		if len(pods.Items) == 0 {
-			return nil
-		}
-
-		// TODO: Add support for multiple pods?
-		pod := pods.Items[0]
-
-		logOptions := &corev1.PodLogOptions{
-			// TODO: Make these configurable via flags?
-			TailLines: types.Int64Ptr(20),
-			Follow:    true,
-			// TODO: Figure out how to support both current and previous somehow (if necessary).
-			// Previous: true,
-		}
-		req := clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, logOptions)
+		req, err := kubectx.GetJobLogs(name, k8s.DefaultLogOptions)
 		if err != nil {
 			return fmt.Errorf("unable to get logs: %v", err)
 		}

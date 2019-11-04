@@ -6,12 +6,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/uitml/frink/pkg/kube/client"
-	"github.com/uitml/frink/pkg/kube/retry"
-	"github.com/uitml/frink/pkg/types"
+	"github.com/uitml/frink/internal/k8s"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var runCmd = &cobra.Command{
@@ -37,35 +34,25 @@ var runCmd = &cobra.Command{
 		}
 
 		// TODO: Implement support for "normal" k8s job specs. Determine based on presence of 'kind' and/or 'apiVersion' keys?
-		spec := types.SimpleJobSpec{}
+		spec := k8s.SimpleJobSpec{}
 		if err := yaml.Unmarshal(data, &spec); err != nil {
 			return fmt.Errorf("unable to parse file: %v", err)
 		}
 		job := spec.Expand()
 
-		clientset, namespace, err := client.ForContext("")
+		kubectx, err := k8s.Client("")
 		if err != nil {
 			return fmt.Errorf("unable to get kube client: %v", err)
 		}
 
-		jobClient := clientset.BatchV1().Jobs(namespace)
-
-		// Delete existing job with same name.
-		deletePolicy := metav1.DeletePropagationBackground
-		deleteOptions := &metav1.DeleteOptions{
-			GracePeriodSeconds: types.Int64Ptr(0),
-			PropagationPolicy:  &deletePolicy,
-		}
-		err = jobClient.Delete(spec.Name, deleteOptions)
+		err = kubectx.DeleteJob(spec.Name)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("unable to previous job: %v", err)
 		}
 
 		// Try to create the job using retry with backoff.
-		err = retry.RetryOnExists(retry.DefaultBackoff, func() error {
-			_, err = jobClient.Create(job)
-			return err
-		})
+		// This handles scenarios where an existing job is still being terminated, etc.
+		err = k8s.RetryOnExists(k8s.DefaultBackoff, func() error { return kubectx.CreateJob(job) })
 		if err != nil {
 			return fmt.Errorf("unable to create job: %v", err)
 		}

@@ -1,4 +1,4 @@
-package retry
+package k8s
 
 // TODO: Remove this module once we upgrade to client-go v16.
 

@@ -1,4 +1,4 @@
-package client
+package k8s
 
 import (
 	"fmt"
@@ -8,19 +8,26 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// ForContext returns a client and namespace for the specified context.
-func ForContext(context string) (*kubernetes.Clientset, string, error) {
+type KubeContext struct {
+	Client    *kubernetes.Clientset
+	Namespace string
+}
+
+// Client returns a k8s client and namespace for the specified context.
+func Client(context string) (*KubeContext, error) {
 	config, namespace, err := buildClientConfig(context)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return client, namespace, nil
+	kubectx := &KubeContext{client, namespace}
+
+	return kubectx, nil
 }
 
 // buildClientConfig returns a complete client config and the namespace for the given context.
