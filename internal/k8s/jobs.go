@@ -27,6 +27,8 @@ var DefaultLogOptions = &corev1.PodLogOptions{
 
 // Expand expands the simplified job spec into a full job object.
 func (spec *SimpleJobSpec) Expand() *batchv1.Job {
+	// TODO: Implement support for resources.
+	// TODO: Implement "NVIDIA_XYZ" environment variables to fix e.g. `gpu: 0` problem.
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: spec.Name,
