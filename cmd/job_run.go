@@ -38,7 +38,11 @@ var runCmd = &cobra.Command{
 		if err := yaml.Unmarshal(data, &spec); err != nil {
 			return fmt.Errorf("unable to parse file: %v", err)
 		}
-		job := spec.Expand()
+
+		job, err := spec.Expand()
+		if err != nil {
+			return fmt.Errorf("invalid job spec: %v", err)
+		}
 
 		kubectx, err := k8s.Client("")
 		if err != nil {

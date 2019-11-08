@@ -5,6 +5,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
@@ -12,53 +13,102 @@ import (
 
 // SimpleJobSpec represents an extremely simplified k8s job specification.
 type SimpleJobSpec struct {
-	Name    string      `yaml:"name"`
-	Image   string      `yaml:"image"`
-	Command StringArray `yaml:"command"`
-	GPU     uint        `yaml:"gpu"`
+	Name       string      `yaml:"name"`
+	Image      string      `yaml:"image"`
+	Command    StringArray `yaml:"command"`
+	WorkingDir string      `yaml:"workingDir,omitempty"`
+	CPU        string      `yaml:"cpu,omitempty"`
+	Memory     string      `yaml:"memory,omitempty"`
+	GPU        string      `yaml:"gpu,omitempty"`
 }
 
-// DefaultLogOptions is the default set of options used for retrieving pod logs.
+// DefaultLogOptions is the default set of options used when retrieving logs.
 var DefaultLogOptions = &corev1.PodLogOptions{
 	// TODO: Make these configurable via flags?
 	Follow: true,
 	// TailLines: int64Ptr(20),
 }
 
-// Expand expands the simplified job spec into a full job object.
-func (spec *SimpleJobSpec) Expand() *batchv1.Job {
-	// TODO: Implement support for resources.
-	// TODO: Implement "NVIDIA_XYZ" environment variables to fix e.g. `gpu: 0` problem.
-	return &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: spec.Name,
+// DefaultVolumes is the default set of volumes mounted provided to the job containers.
+var DefaultVolumes = []corev1.Volume{
+	{
+		Name: "storage",
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: "storage",
+			},
 		},
+	},
+}
+
+// DefaultVolumeMounts is the default set of mount paths for each of the default container volumes.
+var DefaultVolumeMounts = []corev1.VolumeMount{
+	{
+		Name:      "storage",
+		MountPath: "/storage",
+	},
+}
+
+// Expand expands the simplified job spec into a full job object.
+func (spec *SimpleJobSpec) Expand() (*batchv1.Job, error) {
+	resources := corev1.ResourceRequirements{Limits: corev1.ResourceList{}}
+	if spec.CPU != "" {
+		cpu, err := resource.ParseQuantity(spec.CPU)
+		if err != nil {
+			return nil, err
+		}
+
+		resources.Limits["cpu"] = cpu
+	}
+	if spec.Memory != "" {
+		memory, err := resource.ParseQuantity(spec.Memory)
+		if err != nil {
+			return nil, err
+		}
+
+		resources.Limits["memory"] = memory
+	}
+	if spec.GPU != "" {
+		gpu, err := resource.ParseQuantity(spec.GPU)
+		if err != nil {
+			return nil, err
+		}
+
+		resources.Limits["nvidia.com/gpu"] = gpu
+	}
+
+	volumes := DefaultVolumes
+	volumeMounts := DefaultVolumeMounts
+
+	// TODO: Implement "NVIDIA_XYZ" environment variables to fix e.g. `gpu: 0` problem.
+	containers := []corev1.Container{
+		{
+			Name:         spec.Name,
+			Image:        spec.Image,
+			Command:      spec.Command,
+			WorkingDir:   spec.WorkingDir,
+			VolumeMounts: volumeMounts,
+			Resources:    resources,
+
+			TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+		},
+	}
+
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{Name: spec.Name},
 		Spec: batchv1.JobSpec{
 			BackoffLimit: int32Ptr(0),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyOnFailure,
-					Containers: []corev1.Container{
-						{
-							Name:    spec.Name,
-							Image:   spec.Image,
-							Command: spec.Command,
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "storage",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "storage",
-								},
-							},
-						},
-					},
+					Containers:    containers,
+					Volumes:       volumes,
 				},
 			},
 		},
 	}
+
+	return job, nil
 }
 
 // ListJobs returns all jobs.
