@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
 	"gopkg.in/yaml.v3"
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	sigyaml "sigs.k8s.io/yaml"
 )
 
 var runCmd = &cobra.Command{
@@ -33,15 +36,24 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("unable to read file: %v", err)
 		}
 
-		// TODO: Implement support for "normal" k8s job specs. Determine based on presence of 'kind' and/or 'apiVersion' keys?
-		spec := k8s.SimpleJobSpec{}
-		if err := yaml.Unmarshal(data, &spec); err != nil {
-			return fmt.Errorf("unable to parse file: %v", err)
-		}
+		// TODO: Refactor this by extracting functions, etc.
+		var job *batchv1.Job
+		re := regexp.MustCompile(`apiVersion:`)
+		if re.Match(data) {
+			job = &batchv1.Job{}
+			if err := sigyaml.UnmarshalStrict(data, job); err != nil {
+				return fmt.Errorf("unable to parse file: %v", err)
+			}
+		} else {
+			spec := &k8s.SimpleJobSpec{}
+			if err := yaml.Unmarshal(data, spec); err != nil {
+				return fmt.Errorf("unable to parse file: %v", err)
+			}
 
-		job, err := spec.Expand()
-		if err != nil {
-			return fmt.Errorf("invalid job spec: %v", err)
+			job, err = spec.Expand()
+			if err != nil {
+				return fmt.Errorf("invalid job spec: %v", err)
+			}
 		}
 
 		kubectx, err := k8s.Client("")
@@ -49,7 +61,7 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("unable to get kube client: %v", err)
 		}
 
-		err = kubectx.DeleteJob(spec.Name)
+		err = kubectx.DeleteJob(job.Name)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("unable to previous job: %v", err)
 		}
