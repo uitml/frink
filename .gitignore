@@ -1,2 +1,8 @@
+# Platform.
+.DS_Store
+
+# Generic.
 .vscode/
+
+# Project.
 /out/
