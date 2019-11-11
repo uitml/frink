@@ -18,46 +18,26 @@ type SimpleJobSpec struct {
 	GPU        resource.Quantity `json:"gpu,omitempty"`
 }
 
-var (
-	defaultTerminationMessagePolicy = corev1.TerminationMessageFallbackToLogsOnError
-
-	// Do not restart failing jobs.
-	defaultRestartPolicy = corev1.RestartPolicyOnFailure
-	defaultBackoffLimit  = int32Ptr(0)
-)
-
-var defaultVolumes = []corev1.Volume{
-	{
-		Name: "storage",
-		VolumeSource: corev1.VolumeSource{
-			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-				ClaimName: "storage",
-			},
+var defaultVolumes = []corev1.Volume{{
+	Name: "storage",
+	VolumeSource: corev1.VolumeSource{
+		PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+			ClaimName: "storage",
 		},
 	},
-}
+}}
 
-var defaultVolumeMounts = []corev1.VolumeMount{
-	{
-		Name:      "storage",
-		MountPath: "/storage",
-	},
-}
+var defaultVolumeMounts = []corev1.VolumeMount{{
+	Name:      "storage",
+	MountPath: "/storage",
+}}
 
 func (spec *SimpleJobSpec) resources() (*corev1.ResourceRequirements, error) {
-	resources := &corev1.ResourceRequirements{Limits: corev1.ResourceList{}}
-
-	if !spec.CPU.IsZero() {
-		resources.Limits["cpu"] = spec.CPU
-	}
-
-	if !spec.Memory.IsZero() {
-		resources.Limits["memory"] = spec.Memory
-	}
-
-	if !spec.GPU.IsZero() {
-		resources.Limits["nvidia.com/gpu"] = spec.GPU
-	}
+	resources := &corev1.ResourceRequirements{Limits: corev1.ResourceList{
+		"cpu":            spec.CPU,
+		"memory":         spec.Memory,
+		"nvidia.com/gpu": spec.GPU,
+	}}
 
 	return resources, nil
 }
@@ -68,20 +48,17 @@ func (spec *SimpleJobSpec) containers() ([]corev1.Container, error) {
 		return nil, err
 	}
 
-	// TODO: Implement "NVIDIA_XYZ" environment variables to fix e.g. `gpu: 0` problem.
+	containers := []corev1.Container{{
+		Name:         spec.Name,
+		Image:        spec.Image,
+		Command:      spec.Command,
+		WorkingDir:   spec.WorkingDir,
+		VolumeMounts: defaultVolumeMounts,
+		Resources:    *resources,
 
-	containers := []corev1.Container{
-		{
-			Name:         spec.Name,
-			Image:        spec.Image,
-			Command:      spec.Command,
-			WorkingDir:   spec.WorkingDir,
-			VolumeMounts: defaultVolumeMounts,
-			Resources:    *resources,
-
-			TerminationMessagePolicy: defaultTerminationMessagePolicy,
-		},
-	}
+		Stdin: true,
+		TTY:   true,
+	}}
 
 	return containers, nil
 }
@@ -102,14 +79,10 @@ func (spec *SimpleJobSpec) Expand() (*batchv1.Job, error) {
 	job := &batchv1.Job{
 		ObjectMeta: spec.meta(),
 		Spec: batchv1.JobSpec{
-			BackoffLimit: defaultBackoffLimit,
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers:    containers,
-					Volumes:       defaultVolumes,
-					RestartPolicy: defaultRestartPolicy,
-				},
-			},
+			Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{
+				Containers: containers,
+				Volumes:    defaultVolumes,
+			}},
 		},
 	}
 

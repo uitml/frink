@@ -65,6 +65,8 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("unable to previous job: %v", err)
 		}
 
+		k8s.OverrideJobSpec(job)
+
 		// Try to create the job using retry with backoff.
 		// This handles scenarios where an existing job is still being terminated, etc.
 		err = k8s.RetryOnExists(k8s.DefaultBackoff, func() error { return kubectx.CreateJob(job) })

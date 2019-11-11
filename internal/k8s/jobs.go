@@ -10,6 +10,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+var defaultTerminationMessagePolicy = corev1.TerminationMessageFallbackToLogsOnError
+
+var (
+	// Do not restart failing jobs.
+	defaultRestartPolicy = corev1.RestartPolicyOnFailure
+	defaultBackoffLimit  = int32Ptr(0)
+)
+
 // DefaultLogOptions is the default set of options used when retrieving logs.
 var DefaultLogOptions = &corev1.PodLogOptions{
 	// TODO: Make these configurable via flags?
@@ -68,6 +76,37 @@ func (kubectx *KubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) 
 	pod := pods.Items[0]
 	req := kubectx.Client.CoreV1().Pods(kubectx.Namespace).GetLogs(pod.Name, opts)
 	return req, nil
+}
+
+// OverrideJobSpec removes zero quantity resources, and sets other important defaults.
+func OverrideJobSpec(job *batchv1.Job) {
+	containers := job.Spec.Template.Spec.Containers
+	for i := range containers {
+		container := &containers[i]
+		removeZeroResources(container)
+		setTerminationPolicy(container)
+	}
+
+	setRestartPolicy(job)
+}
+
+func removeZeroResources(container *corev1.Container) {
+	limits := container.Resources.Limits
+	for k, v := range limits {
+		if v.IsZero() {
+			// TODO: Notify user.
+			delete(limits, k)
+		}
+	}
+}
+
+func setTerminationPolicy(container *corev1.Container) {
+	container.TerminationMessagePolicy = defaultTerminationMessagePolicy
+}
+
+func setRestartPolicy(job *batchv1.Job) {
+	job.Spec.BackoffLimit = defaultBackoffLimit
+	job.Spec.Template.Spec.RestartPolicy = defaultRestartPolicy
 }
 
 func int32Ptr(i int32) *int32 { return &i }
