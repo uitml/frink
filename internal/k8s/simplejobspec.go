@@ -32,35 +32,38 @@ var defaultVolumeMounts = []corev1.VolumeMount{{
 	MountPath: "/storage",
 }}
 
-func (spec *SimpleJobSpec) resources() (*corev1.ResourceRequirements, error) {
-	resources := &corev1.ResourceRequirements{Limits: corev1.ResourceList{
+func (spec *SimpleJobSpec) volumes() []corev1.Volume {
+	return defaultVolumes
+}
+
+func (spec *SimpleJobSpec) volumeMounts() []corev1.VolumeMount {
+	return defaultVolumeMounts
+}
+
+func (spec *SimpleJobSpec) resources() corev1.ResourceRequirements {
+	resources := corev1.ResourceRequirements{Limits: corev1.ResourceList{
 		"cpu":            spec.CPU,
 		"memory":         spec.Memory,
 		"nvidia.com/gpu": spec.GPU,
 	}}
 
-	return resources, nil
+	return resources
 }
 
-func (spec *SimpleJobSpec) containers() ([]corev1.Container, error) {
-	resources, err := spec.resources()
-	if err != nil {
-		return nil, err
-	}
-
+func (spec *SimpleJobSpec) containers() []corev1.Container {
 	containers := []corev1.Container{{
 		Name:         spec.Name,
 		Image:        spec.Image,
 		Command:      spec.Command,
 		WorkingDir:   spec.WorkingDir,
-		VolumeMounts: defaultVolumeMounts,
-		Resources:    *resources,
+		VolumeMounts: spec.volumeMounts(),
+		Resources:    spec.resources(),
 
 		Stdin: true,
 		TTY:   true,
 	}}
 
-	return containers, nil
+	return containers
 }
 
 func (spec *SimpleJobSpec) meta() metav1.ObjectMeta {
@@ -70,21 +73,16 @@ func (spec *SimpleJobSpec) meta() metav1.ObjectMeta {
 }
 
 // Expand expands the simplified job spec into a full job object.
-func (spec *SimpleJobSpec) Expand() (*batchv1.Job, error) {
-	containers, err := spec.containers()
-	if err != nil {
-		return nil, err
-	}
-
+func (spec *SimpleJobSpec) Expand() *batchv1.Job {
 	job := &batchv1.Job{
 		ObjectMeta: spec.meta(),
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{
-				Containers: containers,
-				Volumes:    defaultVolumes,
+				Containers: spec.containers(),
+				Volumes:    spec.volumes(),
 			}},
 		},
 	}
 
-	return job, nil
+	return job
 }

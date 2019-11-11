@@ -49,10 +49,7 @@ var runCmd = &cobra.Command{
 				return fmt.Errorf("unable to parse file: %v", err)
 			}
 
-			job, err = spec.Expand()
-			if err != nil {
-				return fmt.Errorf("invalid job spec: %v", err)
-			}
+			job = spec.Expand()
 		}
 
 		kubectx, err := k8s.Client("")
@@ -65,6 +62,7 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("unable to previous job: %v", err)
 		}
 
+		// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
 		k8s.OverrideJobSpec(job)
 
 		// Try to create the job using retry with backoff.
