@@ -9,13 +9,13 @@ import (
 
 // SimpleJobSpec represents an extremely simplified k8s job specification.
 type SimpleJobSpec struct {
-	Name       string      `yaml:"name"`
-	Image      string      `yaml:"image"`
-	Command    StringArray `yaml:"command"`
-	WorkingDir string      `yaml:"workingDir,omitempty"`
-	CPU        string      `yaml:"cpu,omitempty"`
-	Memory     string      `yaml:"memory,omitempty"`
-	GPU        string      `yaml:"gpu,omitempty"`
+	Name       string   `yaml:"name"`
+	Image      string   `yaml:"image"`
+	Command    []string `yaml:"command,omitempty,flow"`
+	WorkingDir string   `yaml:"workingDir,omitempty"`
+	CPU        string   `yaml:"cpu,omitempty"`
+	Memory     string   `yaml:"memory,omitempty"`
+	GPU        string   `yaml:"gpu,omitempty"`
 }
 
 var (
