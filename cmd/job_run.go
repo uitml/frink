@@ -8,10 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
-	"gopkg.in/yaml.v3"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	sigyaml "sigs.k8s.io/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 var runCmd = &cobra.Command{
@@ -41,12 +40,12 @@ var runCmd = &cobra.Command{
 		re := regexp.MustCompile(`apiVersion:`)
 		if re.Match(data) {
 			job = &batchv1.Job{}
-			if err := sigyaml.UnmarshalStrict(data, job); err != nil {
+			if err := yaml.UnmarshalStrict(data, job); err != nil {
 				return fmt.Errorf("unable to parse file: %v", err)
 			}
 		} else {
 			spec := &k8s.SimpleJobSpec{}
-			if err := yaml.Unmarshal(data, spec); err != nil {
+			if err := yaml.UnmarshalStrict(data, spec); err != nil {
 				return fmt.Errorf("unable to parse file: %v", err)
 			}
 

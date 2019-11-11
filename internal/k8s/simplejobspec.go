@@ -9,13 +9,13 @@ import (
 
 // SimpleJobSpec represents an extremely simplified k8s job specification.
 type SimpleJobSpec struct {
-	Name       string   `yaml:"name"`
-	Image      string   `yaml:"image"`
-	Command    []string `yaml:"command,omitempty,flow"`
-	WorkingDir string   `yaml:"workingDir,omitempty"`
-	CPU        string   `yaml:"cpu,omitempty"`
-	Memory     string   `yaml:"memory,omitempty"`
-	GPU        string   `yaml:"gpu,omitempty"`
+	Name       string            `json:"name"`
+	Image      string            `json:"image"`
+	WorkingDir string            `json:"workingDir,omitempty"`
+	Command    []string          `json:"command,omitempty"`
+	CPU        resource.Quantity `json:"cpu,omitempty"`
+	Memory     resource.Quantity `json:"memory,omitempty"`
+	GPU        resource.Quantity `json:"gpu,omitempty"`
 }
 
 var (
@@ -47,31 +47,16 @@ var defaultVolumeMounts = []corev1.VolumeMount{
 func (spec *SimpleJobSpec) resources() (*corev1.ResourceRequirements, error) {
 	resources := &corev1.ResourceRequirements{Limits: corev1.ResourceList{}}
 
-	if spec.CPU != "" {
-		qty, err := resource.ParseQuantity(spec.CPU)
-		if err != nil {
-			return nil, err
-		}
-
-		resources.Limits["cpu"] = qty
+	if !spec.CPU.IsZero() {
+		resources.Limits["cpu"] = spec.CPU
 	}
 
-	if spec.Memory != "" {
-		qty, err := resource.ParseQuantity(spec.Memory)
-		if err != nil {
-			return nil, err
-		}
-
-		resources.Limits["memory"] = qty
+	if !spec.Memory.IsZero() {
+		resources.Limits["memory"] = spec.Memory
 	}
 
-	if spec.GPU != "" {
-		qty, err := resource.ParseQuantity(spec.GPU)
-		if err != nil {
-			return nil, err
-		}
-
-		resources.Limits["nvidia.com/gpu"] = qty
+	if !spec.GPU.IsZero() {
+		resources.Limits["nvidia.com/gpu"] = spec.GPU
 	}
 
 	return resources, nil
