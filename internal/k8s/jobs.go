@@ -2,12 +2,15 @@ package k8s
 
 import (
 	"fmt"
+	"io/ioutil"
+	"regexp"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/yaml"
 )
 
 var defaultTerminationMessagePolicy = corev1.TerminationMessageFallbackToLogsOnError
@@ -76,6 +79,32 @@ func (kubectx *KubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) 
 	pod := pods.Items[0]
 	req := kubectx.Client.CoreV1().Pods(kubectx.Namespace).GetLogs(pod.Name, opts)
 	return req, nil
+}
+
+// ParseJob parses the file and returns the corresponding job.
+func ParseJob(file string) (*batchv1.Job, error) {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Refactor this by extracting functions, etc.
+	var job *batchv1.Job
+	re := regexp.MustCompile(`apiVersion:`)
+	if re.Match(data) {
+		job = &batchv1.Job{}
+		if err := yaml.UnmarshalStrict(data, job); err != nil {
+			return nil, err
+		}
+	} else {
+		spec := &SimpleJobSpec{}
+		if err := yaml.UnmarshalStrict(data, spec); err != nil {
+			return nil, err
+		}
+		job = spec.Expand()
+	}
+
+	return job, nil
 }
 
 // OverrideJobSpec removes zero quantity resources, and sets other important defaults.
