@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -32,26 +31,15 @@ var logsCmd = &cobra.Command{
 			return fmt.Errorf("unable to get logs: %v", err)
 		}
 
-		logs, err := req.Stream()
+		stream, err := req.Stream()
 		if err != nil {
 			return fmt.Errorf("unable to stream logs: %v", err)
 		}
-		defer logs.Close()
+		defer stream.Close()
 
-		r := bufio.NewReader(logs)
-		for {
-			p, err := r.ReadBytes('\n')
-			if _, err := os.Stdout.Write(p); err != nil {
-				return fmt.Errorf("unable to write output: %v", err)
-			}
-
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					break
-				}
-
-				return fmt.Errorf("unable to read stream: %v", err)
-			}
+		reader := bufio.NewReader(stream)
+		if _, err := io.Copy(os.Stdout, reader); err != nil {
+			return fmt.Errorf("unable to write output: %v", err)
 		}
 
 		return nil
