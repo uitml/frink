@@ -3,6 +3,7 @@
 
 # Generic.
 .vscode/
+.envrc
 
 # Project.
 /out/
