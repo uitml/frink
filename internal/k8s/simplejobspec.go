@@ -9,13 +9,14 @@ import (
 
 // SimpleJobSpec represents an extremely simplified k8s job specification.
 type SimpleJobSpec struct {
-	Name       string            `json:"name"`
-	Image      string            `json:"image"`
-	WorkingDir string            `json:"workingDir,omitempty"`
-	Command    []string          `json:"command,omitempty"`
-	CPU        resource.Quantity `json:"cpu,omitempty"`
-	Memory     resource.Quantity `json:"memory,omitempty"`
-	GPU        resource.Quantity `json:"gpu,omitempty"`
+	Name       string   `json:"name"`
+	Image      string   `json:"image"`
+	WorkingDir string   `json:"workingDir,omitempty"`
+	Command    []string `json:"command,omitempty"`
+
+	Memory resource.Quantity `json:"memory,omitempty"`
+	CPU    resource.Quantity `json:"cpu,omitempty"`
+	GPU    resource.Quantity `json:"gpu,omitempty"`
 }
 
 var defaultVolumes = []corev1.Volume{{
@@ -42,8 +43,8 @@ func (spec *SimpleJobSpec) volumeMounts() []corev1.VolumeMount {
 
 func (spec *SimpleJobSpec) resources() corev1.ResourceRequirements {
 	resources := corev1.ResourceRequirements{Limits: corev1.ResourceList{
-		"cpu":            spec.CPU,
 		"memory":         spec.Memory,
+		"cpu":            spec.CPU,
 		"nvidia.com/gpu": spec.GPU,
 	}}
 
