@@ -7,8 +7,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SimpleJobSpec represents an extremely simplified k8s job specification.
-type SimpleJobSpec struct {
+// SimpleJob represents an extremely simplified k8s job specification.
+type SimpleJob struct {
 	Name       string   `json:"name"`
 	Image      string   `json:"image"`
 	WorkingDir string   `json:"workingDir,omitempty"`
@@ -33,32 +33,32 @@ var defaultVolumeMounts = []corev1.VolumeMount{{
 	MountPath: "/storage",
 }}
 
-func (spec *SimpleJobSpec) volumes() []corev1.Volume {
+func (simple *SimpleJob) volumes() []corev1.Volume {
 	return defaultVolumes
 }
 
-func (spec *SimpleJobSpec) volumeMounts() []corev1.VolumeMount {
+func (simple *SimpleJob) volumeMounts() []corev1.VolumeMount {
 	return defaultVolumeMounts
 }
 
-func (spec *SimpleJobSpec) resources() corev1.ResourceRequirements {
+func (simple *SimpleJob) resources() corev1.ResourceRequirements {
 	resources := corev1.ResourceRequirements{Limits: corev1.ResourceList{
-		"memory":         spec.Memory,
-		"cpu":            spec.CPU,
-		"nvidia.com/gpu": spec.GPU,
+		"memory":         simple.Memory,
+		"cpu":            simple.CPU,
+		"nvidia.com/gpu": simple.GPU,
 	}}
 
 	return resources
 }
 
-func (spec *SimpleJobSpec) containers() []corev1.Container {
+func (simple *SimpleJob) containers() []corev1.Container {
 	containers := []corev1.Container{{
-		Name:         spec.Name,
-		Image:        spec.Image,
-		Command:      spec.Command,
-		WorkingDir:   spec.WorkingDir,
-		VolumeMounts: spec.volumeMounts(),
-		Resources:    spec.resources(),
+		Name:         simple.Name,
+		Image:        simple.Image,
+		Command:      simple.Command,
+		WorkingDir:   simple.WorkingDir,
+		VolumeMounts: simple.volumeMounts(),
+		Resources:    simple.resources(),
 
 		Stdin: true,
 		TTY:   true,
@@ -67,20 +67,20 @@ func (spec *SimpleJobSpec) containers() []corev1.Container {
 	return containers
 }
 
-func (spec *SimpleJobSpec) meta() metav1.ObjectMeta {
+func (simple *SimpleJob) meta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name: spec.Name,
+		Name: simple.Name,
 	}
 }
 
-// Expand expands the simplified job spec into a full job object.
-func (spec *SimpleJobSpec) Expand() *batchv1.Job {
+// Expand expands the simplified job into a full job object.
+func (simple *SimpleJob) Expand() *batchv1.Job {
 	job := &batchv1.Job{
-		ObjectMeta: spec.meta(),
+		ObjectMeta: simple.meta(),
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{
-				Containers: spec.containers(),
-				Volumes:    spec.volumes(),
+				Containers: simple.containers(),
+				Volumes:    simple.volumes(),
 			}},
 		},
 	}

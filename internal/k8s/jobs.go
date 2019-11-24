@@ -97,11 +97,11 @@ func ParseJob(file string) (*batchv1.Job, error) {
 			return nil, err
 		}
 	} else {
-		spec := &SimpleJobSpec{}
-		if err := yaml.UnmarshalStrict(data, spec); err != nil {
+		simple := &SimpleJob{}
+		if err := yaml.UnmarshalStrict(data, simple); err != nil {
 			return nil, err
 		}
-		job = spec.Expand()
+		job = simple.Expand()
 	}
 
 	return job, nil
