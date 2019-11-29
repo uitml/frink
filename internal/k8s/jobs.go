@@ -61,14 +61,14 @@ func (kubectx *KubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) 
 	getOptions := metav1.GetOptions{}
 	job, err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).Get(name, getOptions)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get job: %v", err)
+		return nil, fmt.Errorf("unable to get job: %w", err)
 	}
 
 	selector := labels.Set(job.Spec.Selector.MatchLabels).String()
 	listOptions := metav1.ListOptions{LabelSelector: selector}
 	pods, err := kubectx.Client.CoreV1().Pods(kubectx.Namespace).List(listOptions)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get pods for job: %v", err)
+		return nil, fmt.Errorf("unable to get pods for job: %w", err)
 	}
 
 	if len(pods.Items) == 0 {

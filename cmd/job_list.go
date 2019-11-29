@@ -30,12 +30,12 @@ var listCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		kubectx, err := k8s.Client("")
 		if err != nil {
-			return fmt.Errorf("could not get k8s client: %v", err)
+			return fmt.Errorf("could not get k8s client: %w", err)
 		}
 
 		jobs, err := kubectx.ListJobs()
 		if err != nil {
-			return fmt.Errorf("could not list jobs: %v", err)
+			return fmt.Errorf("could not list jobs: %w", err)
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)

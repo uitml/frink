@@ -36,12 +36,12 @@ func buildClientConfig(context string) (*rest.Config, string, error) {
 	clientConfig := buildClientCmd(context)
 	config, err := clientConfig.ClientConfig()
 	if err != nil {
-		return nil, "", fmt.Errorf("could not get k8s config for context %q: %s", context, err)
+		return nil, "", fmt.Errorf("could not get k8s config for context %q: %w", context, err)
 	}
 
 	namespace, _, err := clientConfig.Namespace()
 	if err != nil {
-		return nil, "", fmt.Errorf("could not get namespace for context %q: %s", context, err)
+		return nil, "", fmt.Errorf("could not get namespace for context %q: %w", context, err)
 	}
 
 	return config, namespace, nil

@@ -19,12 +19,12 @@ var removeCmd = &cobra.Command{
 
 		kubectx, err := k8s.Client("")
 		if err != nil {
-			return fmt.Errorf("unable to get kube client: %v", err)
+			return fmt.Errorf("unable to get kube client: %w", err)
 		}
 
 		err = kubectx.DeleteJob(name)
 		if err != nil {
-			return fmt.Errorf("unable to delete job: %v", err)
+			return fmt.Errorf("unable to delete job: %w", err)
 		}
 
 		return nil

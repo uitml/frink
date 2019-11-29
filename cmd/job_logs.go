@@ -23,23 +23,23 @@ var logsCmd = &cobra.Command{
 
 		kubectx, err := k8s.Client("")
 		if err != nil {
-			return fmt.Errorf("unable to get kube client: %v", err)
+			return fmt.Errorf("unable to get kube client: %w", err)
 		}
 
 		req, err := kubectx.GetJobLogs(name, k8s.DefaultLogOptions)
 		if err != nil {
-			return fmt.Errorf("unable to get logs: %v", err)
+			return fmt.Errorf("unable to get logs: %w", err)
 		}
 
 		stream, err := req.Stream()
 		if err != nil {
-			return fmt.Errorf("unable to stream logs: %v", err)
+			return fmt.Errorf("unable to stream logs: %w", err)
 		}
 		defer stream.Close()
 
 		reader := bufio.NewReader(stream)
 		if _, err := io.Copy(os.Stdout, reader); err != nil {
-			return fmt.Errorf("unable to write output: %v", err)
+			return fmt.Errorf("unable to write output: %w", err)
 		}
 
 		return nil
