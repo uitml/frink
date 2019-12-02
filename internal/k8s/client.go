@@ -53,7 +53,6 @@ func buildClientCmd(context string) clientcmd.ClientConfig {
 	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
 
 	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
-
 	if context != "" {
 		overrides.CurrentContext = context
 	}
