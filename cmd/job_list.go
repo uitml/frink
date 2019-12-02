@@ -73,7 +73,7 @@ func underlinedHeader() string {
 func row(job batchv1.Job) string {
 	data := []string{
 		job.Name,
-		strconv.FormatInt(int64(job.Status.Succeeded), 10),
+		strconv.Itoa(int(job.Status.Succeeded)),
 	}
 
 	return strings.Join(data, "\t") + "\t" // TODO: Check if the trailing tab is required
