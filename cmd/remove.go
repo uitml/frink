@@ -9,7 +9,7 @@ import (
 
 var removeCmd = &cobra.Command{
 	Use:   "rm [name]",
-	Short: "Remove a job",
+	Short: "Remove job from cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("job name must be specified")

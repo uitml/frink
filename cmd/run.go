@@ -11,7 +11,7 @@ import (
 
 var runCmd = &cobra.Command{
 	Use:   "run [file]",
-	Short: "Schedule a job",
+	Short: "Schedule a job on the cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("job specification file must be specified")

@@ -6,7 +6,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "frink",
-	Short: "Simplifies your Springfield workflows",
+	Short: "Frink simplifies your Springfield workflows",
 
 	// Silence usage when an error occurs.
 	SilenceUsage: true,
@@ -18,7 +18,10 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.AddCommand(jobCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(logsCmd)
+	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(runCmd)
 
 	disableFlagsInUseLine(rootCmd)
 }
