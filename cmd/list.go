@@ -8,7 +8,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.com/uitml/frink/internal/k8s"
 	batchv1 "k8s.io/api/batch/v1"
 )
 
@@ -28,11 +27,6 @@ var listCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List jobs",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		kubectx, err := k8s.Client("")
-		if err != nil {
-			return fmt.Errorf("could not get k8s client: %w", err)
-		}
-
 		jobs, err := kubectx.ListJobs()
 		if err != nil {
 			return fmt.Errorf("could not list jobs: %w", err)

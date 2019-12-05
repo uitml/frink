@@ -34,11 +34,6 @@ var runCmd = &cobra.Command{
 		// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
 		k8s.OverrideJobSpec(job)
 
-		kubectx, err := k8s.Client("")
-		if err != nil {
-			return fmt.Errorf("unable to get kube client: %w", err)
-		}
-
 		err = kubectx.DeleteJob(job.Name)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("unable to previous job: %w", err)

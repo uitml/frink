@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/uitml/frink/internal/k8s"
 )
 
 var removeCmd = &cobra.Command{
@@ -16,14 +15,7 @@ var removeCmd = &cobra.Command{
 		}
 
 		name := args[0]
-
-		kubectx, err := k8s.Client("")
-		if err != nil {
-			return fmt.Errorf("unable to get kube client: %w", err)
-		}
-
-		err = kubectx.DeleteJob(name)
-		if err != nil {
+		if err := kubectx.DeleteJob(name); err != nil {
 			return fmt.Errorf("unable to delete job: %w", err)
 		}
 
