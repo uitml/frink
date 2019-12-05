@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/uitml/frink/internal/cli"
 	"github.com/uitml/frink/internal/k8s"
 )
 
@@ -30,31 +31,16 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// Execute executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
-}
-
 func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(runCmd)
 
-	disableFlagsInUseLine(rootCmd)
+	cli.DisableFlagsInUseLine(rootCmd)
 }
 
-// visitAll visits the entire command tree rooted at cmd, invoking fn on each command.
-func visitAll(c *cobra.Command, fn func(*cobra.Command)) {
-	fn(c)
-	for _, child := range c.Commands() {
-		visitAll(child, fn)
-	}
-}
-
-// disableFlagsInUseLine sets the disableFlagsInUseLine flag on the entire command tree rooted at cmd.
-func disableFlagsInUseLine(c *cobra.Command) {
-	visitAll(c, func(c *cobra.Command) {
-		c.DisableFlagsInUseLine = true
-	})
+// Execute executes the root command.
+func Execute() error {
+	return rootCmd.Execute()
 }
