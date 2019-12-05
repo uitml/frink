@@ -45,16 +45,16 @@ func init() {
 }
 
 // visitAll visits the entire command tree rooted at cmd, invoking fn on each command.
-func visitAll(cmd *cobra.Command, fn func(*cobra.Command)) {
-	fn(cmd)
-	for _, child := range cmd.Commands() {
+func visitAll(c *cobra.Command, fn func(*cobra.Command)) {
+	fn(c)
+	for _, child := range c.Commands() {
 		visitAll(child, fn)
 	}
 }
 
 // disableFlagsInUseLine sets the disableFlagsInUseLine flag on the entire command tree rooted at cmd.
-func disableFlagsInUseLine(cmd *cobra.Command) {
-	visitAll(cmd, func(c *cobra.Command) {
+func disableFlagsInUseLine(c *cobra.Command) {
+	visitAll(c, func(c *cobra.Command) {
 		c.DisableFlagsInUseLine = true
 	})
 }
