@@ -1,53 +1,90 @@
 package cmd
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var runCmd = &cobra.Command{
-	Use:   "run [file]",
-	Short: "Schedule a job on the cluster",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return fmt.Errorf("job specification file must be specified")
-		}
+var (
+	runCmd = &cobra.Command{
+		Use:   "run [file]",
+		Short: "Schedule a job on the cluster",
 
-		file := args[0]
-		if _, err := os.Stat(file); err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("specified file does not exist: %v", file)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("job specification file must be specified")
 			}
 
-			return fmt.Errorf("unable to access file: %w", err)
-		}
+			file := args[0]
+			if _, err := os.Stat(file); err != nil {
+				if os.IsNotExist(err) {
+					return fmt.Errorf("specified file does not exist: %v", file)
+				}
 
-		job, err := k8s.ParseJob(file)
-		if err != nil {
-			return fmt.Errorf("unable to parse job: %w", err)
-		}
+				return fmt.Errorf("unable to access file: %w", err)
+			}
 
-		// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
-		k8s.OverrideJobSpec(job)
+			job, err := k8s.ParseJob(file)
+			if err != nil {
+				return fmt.Errorf("unable to parse job: %w", err)
+			}
 
-		err = kubectx.DeleteJob(job.Name)
-		if err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("unable to previous job: %w", err)
-		}
+			// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
+			k8s.OverrideJobSpec(job)
 
-		// Try to create the job using retry with backoff.
-		// This handles scenarios where an existing job is still being terminated, etc.
-		err = k8s.RetryOnExists(k8s.DefaultBackoff, func() error { return kubectx.CreateJob(job) })
-		if err != nil {
-			return fmt.Errorf("unable to create job: %w", err)
-		}
+			err = kubectx.DeleteJob(job.Name)
+			if err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("unable to previous job: %w", err)
+			}
 
-		// TODO: Implement support for streaming job/pod log to stdout.
+			// Try to create the job using retry with backoff.
+			// This handles scenarios where an existing job is still being terminated, etc.
+			err = k8s.RetryOnExists(k8s.DefaultBackoff, func() error { return kubectx.CreateJob(job) })
+			if err != nil {
+				return fmt.Errorf("unable to create job: %w", err)
+			}
 
-		return nil
-	},
-}
+			// TODO: Enable/disable using flag.
+			backoff := wait.Backoff{
+				Steps:    30,
+				Duration: 1 * time.Second,
+				Factor:   1.0,
+				Jitter:   0.1,
+			}
+
+			err = k8s.OnError(backoff, apierrors.IsBadRequest, func() error {
+				req, err := kubectx.GetJobLogs(job.Name, k8s.DefaultLogOptions)
+				if err != nil {
+					return errors.Unwrap(err)
+				}
+
+				stream, err := req.Stream()
+				if err != nil {
+					return err
+				}
+				defer stream.Close()
+
+				reader := bufio.NewReader(stream)
+				if _, err := io.Copy(os.Stdout, reader); err != nil {
+					return err
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+)
