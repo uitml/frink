@@ -16,33 +16,34 @@ var (
 var (
 	context   string
 	namespace string
+
+	rootCmd = &cobra.Command{
+		Use:   "frink",
+		Short: "Frink simplifies your Springfield workflows",
+
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			ctx, err := k8s.Client(context, namespace)
+			if err != nil {
+				return fmt.Errorf("unable to get kube client: %w", err)
+			}
+			kubectx = ctx
+			return nil
+		},
+
+		// Silence usage when an error occurs.
+		SilenceUsage: true,
+	}
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "frink",
-	Short: "Frink simplifies your Springfield workflows",
-
-	// Silence usage when an error occurs.
-	SilenceUsage: true,
-
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		ctx, err := k8s.Client(context, namespace)
-		if err != nil {
-			return fmt.Errorf("unable to get kube client: %w", err)
-		}
-		kubectx = ctx
-		return nil
-	},
-}
-
 func init() {
+	pflags := rootCmd.PersistentFlags()
+	pflags.StringVar(&context, "context", "", "name of the kubeconfig context to use")
+	pflags.StringVarP(&namespace, "namespace", "n", "", "cluster namespace to use")
+
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(runCmd)
-
-	rootCmd.PersistentFlags().StringVar(&context, "context", "", "name of the kubeconfig context to use")
-	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "", "cluster namespace to use")
 
 	cli.DisableFlagsInUseLine(rootCmd)
 }
