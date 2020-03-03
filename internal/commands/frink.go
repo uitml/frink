@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ var (
 			return nil
 		},
 
-		// Silence usage when an error occurs.
+		// Do not display usage when an error occurs.
 		SilenceUsage: true,
 	}
 )

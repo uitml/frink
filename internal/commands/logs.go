@@ -1,7 +1,8 @@
-package cmd
+package commands
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -23,7 +24,11 @@ var (
 			name := args[0]
 			req, err := kubectx.GetJobLogs(name, k8s.DefaultLogOptions)
 			if err != nil {
-				return fmt.Errorf("unable to get logs: %w", err)
+				return fmt.Errorf("unable to get logs: %w", errors.Unwrap(err))
+			}
+
+			if req == nil {
+				return fmt.Errorf("unable to get logs: request not returned (nil)")
 			}
 
 			stream, err := req.Stream()
