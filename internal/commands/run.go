@@ -15,6 +15,8 @@ import (
 )
 
 var (
+	follow bool
+
 	runCmd = &cobra.Command{
 		Use:   "run [file]",
 		Short: "Schedule a job on the cluster",
@@ -53,7 +55,10 @@ var (
 				return fmt.Errorf("unable to create job: %w", err)
 			}
 
-			// TODO: Enable/disable using flag.
+			if !follow {
+				return nil
+			}
+
 			backoff := wait.Backoff{
 				Steps:    30,
 				Duration: 1 * time.Second,
@@ -61,6 +66,7 @@ var (
 				Jitter:   0.1,
 			}
 
+			// TODO: Ensure nil references are properly handled in this block.
 			err = k8s.OnError(backoff, apierrors.IsBadRequest, func() error {
 				req, err := kubectx.GetJobLogs(job.Name, k8s.DefaultLogOptions)
 				if err != nil {
@@ -88,3 +94,7 @@ var (
 		},
 	}
 )
+
+func init() {
+	runCmd.Flags().BoolVarP(&follow, "follow", "f", false, "wait for job to start, then stream logs")
+}
