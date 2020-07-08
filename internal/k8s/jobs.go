@@ -40,7 +40,7 @@ func (kubectx *KubeContext) ListJobs() (*batchv1.JobList, error) {
 
 // DeleteJob deletes the job with the given name.
 func (kubectx *KubeContext) DeleteJob(name string) error {
-	deletePolicy := metav1.DeletePropagationBackground
+	deletePolicy := metav1.DeletePropagationForeground
 	deleteOptions := &metav1.DeleteOptions{
 		GracePeriodSeconds: int64Ptr(0),
 		PropagationPolicy:  &deletePolicy,
