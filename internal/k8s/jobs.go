@@ -72,6 +72,7 @@ func (kubectx *KubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) 
 	}
 
 	if len(pods.Items) == 0 {
+		// TODO: Treat this as an error scenario?
 		return nil, nil
 	}
 

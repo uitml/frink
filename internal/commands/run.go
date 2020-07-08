@@ -72,6 +72,11 @@ var (
 					return errors.Unwrap(err)
 				}
 
+				if req == nil {
+					// TODO: Inform user we did not get any logs?
+					return fmt.Errorf("unable to get logs: request not returned (nil)")
+				}
+
 				stream, err := req.Stream()
 				if err != nil {
 					return err
