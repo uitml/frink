@@ -60,10 +60,9 @@ var (
 			}
 
 			backoff := wait.Backoff{
-				Steps:    30,
 				Duration: 1 * time.Second,
 				Factor:   1.0,
-				Jitter:   0.1,
+				Steps:    120,
 			}
 
 			// TODO: Ensure nil references are properly handled in this block.
