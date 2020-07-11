@@ -18,7 +18,7 @@ var (
 	follow bool
 
 	runCmd = &cobra.Command{
-		Use:   "run [file]",
+		Use:   "run <file>",
 		Short: "Schedule a job on the cluster",
 
 		RunE: func(cmd *cobra.Command, args []string) error {

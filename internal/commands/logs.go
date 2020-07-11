@@ -13,7 +13,7 @@ import (
 
 var (
 	logsCmd = &cobra.Command{
-		Use:   "logs [name]",
+		Use:   "logs <name>",
 		Short: "Fetch the logs of a job",
 
 		RunE: func(cmd *cobra.Command, args []string) error {

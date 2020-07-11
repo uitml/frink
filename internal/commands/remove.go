@@ -8,7 +8,7 @@ import (
 
 var (
 	removeCmd = &cobra.Command{
-		Use:   "rm [name]",
+		Use:   "rm <name>",
 		Short: "Remove job from cluster",
 
 		RunE: func(cmd *cobra.Command, args []string) error {
