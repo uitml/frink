@@ -1,3 +1,4 @@
+// Package cli contains various CLI-focused utility functions.
 package cli
 
 import "github.com/spf13/cobra"

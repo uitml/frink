@@ -1,3 +1,7 @@
+// Package k8s provides abstractions of some parts of the k8s API.
+//
+// The primary abstractions are built to simplify interactions with the batch API,
+// specifically around managing jobs.
 package k8s
 
 import (
