@@ -1,13 +1,13 @@
 module github.com/uitml/frink
 
-go 1.13
+go 1.14
 
 require (
 	github.com/dustin/go-humanize v1.0.0
-	github.com/hako/durafmt v0.0.0-20191009132224-3f39dc1ed9f4
-	github.com/spf13/cobra v0.0.5
-	k8s.io/api v0.17.0
-	k8s.io/apimachinery v0.17.0
-	k8s.io/client-go v0.17.0
-	sigs.k8s.io/yaml v1.1.0
+	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
+	github.com/spf13/cobra v1.0.0
+	k8s.io/api v0.17.8
+	k8s.io/apimachinery v0.17.8
+	k8s.io/client-go v0.17.8
+	sigs.k8s.io/yaml v1.2.0
 )
