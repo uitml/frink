@@ -1,66 +1,38 @@
-package k8s
-
-// TODO: Remove this module once we upgrade to client-go v16.
+// Package retry is a very minimal wrapper around the "k8s.io/client-go/util/retry" package.
+package retry
 
 import (
-	"time"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+	retry "k8s.io/client-go/util/retry"
 )
 
 // DefaultRetry is the recommended retry for a conflict where multiple clients
 // are making changes to the same resource.
-var DefaultRetry = wait.Backoff{
-	Steps:    5,
-	Duration: 10 * time.Millisecond,
-	Factor:   1.0,
-	Jitter:   0.1,
-}
+var DefaultRetry = retry.DefaultRetry
 
 // DefaultBackoff is the recommended backoff for a conflict where a client
 // may be attempting to make an unrelated modification to a resource under
 // active management by one or more controllers.
-var DefaultBackoff = wait.Backoff{
-	Steps:    4,
-	Duration: 10 * time.Millisecond,
-	Factor:   5.0,
-	Jitter:   0.1,
-}
+var DefaultBackoff = retry.DefaultBackoff
 
 // OnError allows the caller to retry fn in case the error returned by fn is retriable
 // according to the provided function. backoff defines the maximum retries and the wait
 // interval between two retries.
 func OnError(backoff wait.Backoff, retriable func(error) bool, fn func() error) error {
-	var lastErr error
-	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-		err := fn()
-		switch {
-		case err == nil:
-			return true, nil
-		case retriable(err):
-			lastErr = err
-			return false, nil
-		default:
-			return false, err
-		}
-	})
-	if err == wait.ErrWaitTimeout {
-		err = lastErr
-	}
-	return err
+	return retry.OnError(backoff, retriable, fn)
 }
 
-// RetryOnConflict is used to make an update to a resource when you have to worry about
+// OnConflict is used to make an update to a resource when you have to worry about
 // conflicts caused by other code making unrelated updates to the resource at the same
 // time. fn should fetch the resource to be modified, make appropriate changes to it, try
 // to update it, and return (unmodified) the error from the update function. On a
-// successful update, RetryOnConflict will return nil. If the update function returns a
-// "Conflict" error, RetryOnConflict will wait some amount of time as described by
+// successful update, OnConflict will return nil. If the update function returns a
+// "Conflict" error, OnConflict will wait some amount of time as described by
 // backoff, and then try again. On a non-"Conflict" error, or if it retries too many times
-// and gives up, RetryOnConflict will return an error to the caller.
+// and gives up, OnConflict will return an error to the caller.
 //
-//     err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+//     err := retry.OnConflict(retry.DefaultRetry, func() error {
 //         // Fetch the resource here; you need to refetch it on every try, since
 //         // if you got a conflict on the last update attempt then you need to get
 //         // the current version before making your own changes.
@@ -75,7 +47,7 @@ func OnError(backoff wait.Backoff, retriable func(error) bool, fn func() error) 
 //         // Try to update
 //         _, err = c.Pods("mynamespace").UpdateStatus(pod)
 //         // You have to return err itself here (not wrapped inside another error)
-//         // so that RetryOnConflict can identify it correctly.
+//         // so that OnConflict can identify it correctly.
 //         return err
 //     })
 //     if err != nil {
@@ -84,14 +56,12 @@ func OnError(backoff wait.Backoff, retriable func(error) bool, fn func() error) 
 //         return err
 //     }
 //     ...
-//
-// TODO: Make Backoff an interface?
-func RetryOnConflict(backoff wait.Backoff, fn func() error) error {
+func OnConflict(backoff wait.Backoff, fn func() error) error {
 	return OnError(backoff, errors.IsConflict, fn)
 }
 
-// RetryOnExists can be used to recreate a resource immediately after the previous copy
+// OnExists can be used to recreate a resource immediately after the previous copy
 // has been deleted, and thus might still be in a state of being removed.
-func RetryOnExists(backoff wait.Backoff, fn func() error) error {
+func OnExists(backoff wait.Backoff, fn func() error) error {
 	return OnError(backoff, errors.IsAlreadyExists, fn)
 }
