@@ -7,6 +7,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
@@ -38,6 +39,17 @@ func (kubectx *KubeContext) ListJobs() (*batchv1.JobList, error) {
 	return jobs, nil
 }
 
+// GetJob returns the job with the given name.
+func (kubectx *KubeContext) GetJob(name string) (*batchv1.Job, error) {
+	getOptions := metav1.GetOptions{}
+	job, err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).Get(name, getOptions)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, err
+	}
+
+	return job, nil
+}
+
 // DeleteJob deletes the job with the given name.
 func (kubectx *KubeContext) DeleteJob(name string) error {
 	deletePolicy := metav1.DeletePropagationForeground
@@ -47,7 +59,11 @@ func (kubectx *KubeContext) DeleteJob(name string) error {
 	}
 
 	err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).Delete(name, deleteOptions)
-	return err
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
 }
 
 // CreateJob creates a job with the given specification.
@@ -79,6 +95,7 @@ func (kubectx *KubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) 
 	// TODO: Add support for multiple pods?
 	pod := pods.Items[0]
 	req := kubectx.Client.CoreV1().Pods(kubectx.Namespace).GetLogs(pod.Name, opts)
+
 	return req, nil
 }
 

@@ -10,12 +10,20 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
+	"github.com/uitml/frink/internal/util/retry"
+	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
 	follow bool
+
+	backoff = wait.Backoff{
+		Duration: 100 * time.Millisecond,
+		Factor:   1.0,
+		Steps:    1200,
+	}
 
 	runCmd = &cobra.Command{
 		Use:   "run <file>",
@@ -43,14 +51,20 @@ var (
 			// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
 			k8s.OverrideJobSpec(job)
 
+			fmt.Println("Deleting existing job...")
 			err = kubectx.DeleteJob(job.Name)
-			if err != nil && !apierrors.IsNotFound(err) {
-				return fmt.Errorf("unable to previous job: %w", err)
+			if err != nil {
+				return fmt.Errorf("unable to delete previous job: %w", err)
 			}
 
-			// Try to create the job using retry with backoff.
+			if err := waitUntilDeleted(job); err != nil {
+				return err
+			}
+
+			// Try to create the job using retry.
 			// This handles scenarios where an existing job is still being terminated, etc.
-			err = k8s.RetryOnExists(k8s.DefaultBackoff, func() error { return kubectx.CreateJob(job) })
+			fmt.Println("Creating job...")
+			err = retry.OnExists(backoff, func() error { return kubectx.CreateJob(job) })
 			if err != nil {
 				return fmt.Errorf("unable to create job: %w", err)
 			}
@@ -59,14 +73,8 @@ var (
 				return nil
 			}
 
-			backoff := wait.Backoff{
-				Duration: 1 * time.Second,
-				Factor:   1.0,
-				Steps:    120,
-			}
-
 			// TODO: Ensure nil references are properly handled in this block.
-			err = k8s.OnError(backoff, apierrors.IsBadRequest, func() error {
+			err = retry.OnError(backoff, apierrors.IsBadRequest, func() error {
 				req, err := kubectx.GetJobLogs(job.Name, k8s.DefaultLogOptions)
 				if err != nil {
 					return errors.Unwrap(err)
@@ -98,6 +106,19 @@ var (
 		},
 	}
 )
+
+func waitUntilDeleted(job *batchv1.Job) error {
+	err := wait.Poll(100*time.Millisecond, 30*time.Second, func() (bool, error) {
+		oldJob, err := kubectx.GetJob(job.Name)
+		if err != nil {
+			return false, err
+		}
+
+		return oldJob == nil, nil
+	})
+
+	return err
+}
 
 func init() {
 	runCmd.Flags().BoolVarP(&follow, "follow", "f", false, "wait for job to start, then stream logs")
