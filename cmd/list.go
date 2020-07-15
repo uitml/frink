@@ -90,6 +90,7 @@ func completions(job batchv1.Job) string {
 
 func duration(job batchv1.Job) string {
 	_, duration := timing(job)
+	// TODO: Implement "smart" truncation scheme.
 	humanized := durafmt.Parse(duration).LimitFirstN(2).String()
 
 	return humanized
