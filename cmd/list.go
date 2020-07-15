@@ -1,4 +1,4 @@
-package commands
+package cmd
 
 import (
 	"fmt"
@@ -13,34 +13,33 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 )
 
-var (
-	showAll bool
+var showAll bool
 
-	listCmd = &cobra.Command{
-		Use:   "ls",
-		Short: "List jobs",
+var listCmd = &cobra.Command{
+	Use:   "ls",
+	Short: "List jobs",
 
-		RunE: func(cmd *cobra.Command, args []string) error {
-			jobs, err := kubectx.ListJobs()
-			if err != nil {
-				return fmt.Errorf("could not list jobs: %w", err)
-			}
+	RunE: func(cmd *cobra.Command, args []string) error {
+		jobs, err := kubectx.ListJobs()
+		if err != nil {
+			return fmt.Errorf("could not list jobs: %w", err)
+		}
 
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-			defer w.Flush()
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+		defer w.Flush()
 
-			fmt.Fprintln(w, header())
-			for _, job := range jobs.Items {
-				fmt.Fprintln(w, row(job))
-			}
+		fmt.Fprintln(w, header())
+		for _, job := range jobs.Items {
+			fmt.Fprintln(w, row(job))
+		}
 
-			return nil
-		},
-	}
-)
+		return nil
+	},
+}
 
 func init() {
-	listCmd.Flags().BoolVarP(&showAll, "all", "a", false, "show all jobs; active and terminated")
+	flags := listCmd.Flags()
+	flags.BoolVarP(&showAll, "all", "a", false, "show all jobs; active and terminated")
 }
 
 var (

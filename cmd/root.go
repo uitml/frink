@@ -1,8 +1,9 @@
-// Package commands provides implementations of CLI commands.
-package commands
+// Package cmd provides implementations of CLI commands.
+package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/cli"
@@ -10,31 +11,29 @@ import (
 )
 
 // NOTE: Global package state; bad idea, but works for the time being.
-var (
-	kubectx *k8s.KubeContext
-)
+var kubectx *k8s.KubeContext
 
 var (
 	context   string
 	namespace string
-
-	rootCmd = &cobra.Command{
-		Use:   "frink",
-		Short: "Frink simplifies your Springfield workflows",
-
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			ctx, err := k8s.Client(context, namespace)
-			if err != nil {
-				return fmt.Errorf("unable to get kube client: %w", err)
-			}
-			kubectx = ctx
-			return nil
-		},
-
-		// Do not display usage when an error occurs.
-		SilenceUsage: true,
-	}
 )
+
+var rootCmd = &cobra.Command{
+	Use:   "frink",
+	Short: "Frink simplifies your Springfield workflows",
+
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		ctx, err := k8s.Client(context, namespace)
+		if err != nil {
+			return fmt.Errorf("unable to get kube client: %w", err)
+		}
+		kubectx = ctx
+		return nil
+	},
+
+	// Do not display usage when an error occurs.
+	SilenceUsage: true,
+}
 
 func init() {
 	pflags := rootCmd.PersistentFlags()
@@ -50,6 +49,9 @@ func init() {
 }
 
 // Execute executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
