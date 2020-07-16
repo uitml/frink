@@ -6,4 +6,5 @@
 .envrc
 
 # Project.
+/dist/
 /out/
