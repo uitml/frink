@@ -43,11 +43,6 @@ func init() {
 	pflags.StringP("namespace", "n", "", "cluster namespace to use")
 	viper.BindPFlags(pflags)
 
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(logsCmd)
-	rootCmd.AddCommand(removeCmd)
-	rootCmd.AddCommand(runCmd)
-
 	cli.DisableFlagsInUseLine(rootCmd)
 }
 

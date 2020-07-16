@@ -23,3 +23,7 @@ var removeCmd = &cobra.Command{
 		return nil
 	},
 }
+
+func init() {
+	rootCmd.AddCommand(removeCmd)
+}

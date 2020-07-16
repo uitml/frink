@@ -106,6 +106,8 @@ var runCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(runCmd)
+
 	flags := runCmd.Flags()
 	flags.BoolVarP(&follow, "follow", "f", false, "wait for job to start, then stream logs")
 }

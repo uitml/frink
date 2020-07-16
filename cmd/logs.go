@@ -46,3 +46,7 @@ var logsCmd = &cobra.Command{
 
 	Aliases: []string{"watch"},
 }
+
+func init() {
+	rootCmd.AddCommand(logsCmd)
+}

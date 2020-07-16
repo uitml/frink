@@ -38,6 +38,8 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(listCmd)
+
 	flags := listCmd.Flags()
 	flags.BoolVarP(&showAll, "all", "a", false, "show all jobs; active and terminated")
 }
