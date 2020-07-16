@@ -38,7 +38,5 @@ func InitConfig() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-	} else {
-		fmt.Println(viper.ConfigFileUsed())
 	}
 }
