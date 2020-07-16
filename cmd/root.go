@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/uitml/frink/internal/cli"
 	"github.com/uitml/frink/internal/k8s"
 )
@@ -13,20 +14,19 @@ import (
 // NOTE: Global package state; bad idea, but works for the time being.
 var kubectx *k8s.KubeContext
 
-var (
-	context   string
-	namespace string
-)
-
 var rootCmd = &cobra.Command{
 	Use:   "frink",
 	Short: "Frink simplifies your Springfield workflows",
 
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		context := viper.GetString("context")
+		namespace := viper.GetString("namespace")
+
 		ctx, err := k8s.Client(context, namespace)
 		if err != nil {
 			return fmt.Errorf("unable to get kube client: %w", err)
 		}
+
 		kubectx = ctx
 		return nil
 	},
@@ -36,9 +36,12 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	cobra.OnInitialize(cli.InitConfig)
+
 	pflags := rootCmd.PersistentFlags()
-	pflags.StringVar(&context, "context", "", "name of the kubeconfig context to use")
-	pflags.StringVarP(&namespace, "namespace", "n", "", "cluster namespace to use")
+	pflags.String("context", "", "name of the kubeconfig context to use")
+	pflags.StringP("namespace", "n", "", "cluster namespace to use")
+	viper.BindPFlags(pflags)
 
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(logsCmd)
