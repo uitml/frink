@@ -18,9 +18,10 @@ builds:
   - amd64
 
 archives:
-- name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+- format: binary
+  name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
   replacements:
-    darwin: Darwin
+    darwin: macOS
     linux: Linux
     amd64: x86_64
 
@@ -32,8 +33,3 @@ snapshot:
 
 changelog:
   skip: true
-  # sort: asc
-  # filters:
-  #   exclude:
-  #   - '^docs:'
-  #   - '^test:'
