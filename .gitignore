@@ -1,1 +1,10 @@
+# Platform.
+.DS_Store
+
+# Generic.
 .vscode/
+.envrc
+
+# Project.
+/dist/
+/out/
