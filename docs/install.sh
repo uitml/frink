@@ -3,7 +3,7 @@
 set -eu
 umask 077
 
-api_url="https://raw.githubusercontent.com/uitml/frink/master"
+api_url="https://raw.githubusercontent.com/uitml/frink/legacy"
 
 mkdir -p /tmp/frink && cd /tmp/frink
 curl -LO "${api_url}/bin/kubectl-job-kill"
