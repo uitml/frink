@@ -1,6 +1,13 @@
+project_name: frink
+
 before:
   hooks:
-    - go mod download
+  - go mod tidy
+  - go mod download
+
+release:
+  prerelease: auto
+
 builds:
 - env:
   - CGO_ENABLED=0
@@ -9,20 +16,24 @@ builds:
   - linux
   goarch:
   - amd64
+
 archives:
-- name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+- name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
   replacements:
     darwin: Darwin
     linux: Linux
     amd64: x86_64
+
 checksum:
   name_template: 'checksums.txt'
+
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: '{{ replace .Tag "v" "" }}-{{ .ShortCommit }}'
+
 changelog:
   skip: true
-  sort: asc
-  filters:
-    exclude:
-    - '^docs:'
-    - '^test:'
+  # sort: asc
+  # filters:
+  #   exclude:
+  #   - '^docs:'
+  #   - '^test:'
