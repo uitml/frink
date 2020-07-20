@@ -3,12 +3,20 @@
 set -eu
 umask 077
 
-api_url="https://raw.githubusercontent.com/uitml/frink/legacy"
+kernel="$(uname -s | tr '[:upper:]' '[:lower:]')"
+case "${kernel}" in
+  linux*) os="linux" ;;
+  darwin*) os="macos" ;;
+  *) echo "unknown kernel" && exit 1 ;;
+esac
 
-mkdir -p /tmp/frink && cd /tmp/frink
-curl -LO "${api_url}/bin/kubectl-job-kill"
-curl -LO "${api_url}/bin/kubectl-job-list"
-curl -LO "${api_url}/bin/kubectl-job-run"
-curl -LO "${api_url}/bin/kubectl-job-watch"
-sudo cp kubectl* /usr/local/bin/
-sudo chmod 755 /usr/local/bin/kubectl-job-*
+api_url="https://raw.githubusercontent.com/uitml/frink/legacy"
+version="$(curl -s https://api.github.com/repos/uitml/frink/releases/latest | grep "\"name\": \"v.*\"" | cut -d '"' -f 4)"
+download_url="https://github.com/uitml/frink/releases/download/${version}/frink-${os}"
+
+echo ${download_url}
+
+cd "$(mktemp -d -t frink-XXXX)"
+curl -LO "${download_url}"
+sudo cp frink* /usr/local/bin/frink
+sudo chmod 755 /usr/local/bin/frink
