@@ -50,14 +50,8 @@ var runCmd = &cobra.Command{
 		// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
 		k8s.OverrideJobSpec(job)
 
-		fmt.Println("Deleting existing job...")
-		err = kubectx.DeleteJob(job.Name)
-		if err != nil {
+		if err := deletePreviousJob(job); err != nil {
 			return fmt.Errorf("unable to delete previous job: %w", err)
-		}
-
-		if err := waitUntilDeleted(job); err != nil {
-			return err
 		}
 
 		// Try to create the job using retry.
@@ -80,7 +74,6 @@ var runCmd = &cobra.Command{
 			}
 
 			if req == nil {
-				// TODO: Inform user we did not get any logs?
 				return fmt.Errorf("unable to get logs: request not returned (nil)")
 			}
 
@@ -112,8 +105,29 @@ func init() {
 	flags.BoolVarP(&follow, "follow", "f", false, "wait for job to start, then stream logs")
 }
 
+func deletePreviousJob(job *batchv1.Job) error {
+	oldJob, err := kubectx.GetJob(job.Name)
+	if err != nil {
+		return fmt.Errorf("unable to get previous job: %w", err)
+	}
+
+	if oldJob != nil {
+		fmt.Println("Deleting previous job...")
+		err = kubectx.DeleteJob(oldJob.Name)
+		if err != nil {
+			return err
+		}
+
+		if err := waitUntilDeleted(oldJob); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func waitUntilDeleted(job *batchv1.Job) error {
-	err := wait.Poll(100*time.Millisecond, 30*time.Second, func() (bool, error) {
+	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
 		oldJob, err := kubectx.GetJob(job.Name)
 		if err != nil {
 			return false, err

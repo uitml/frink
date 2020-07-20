@@ -43,7 +43,11 @@ func (kubectx *KubeContext) ListJobs() (*batchv1.JobList, error) {
 func (kubectx *KubeContext) GetJob(name string) (*batchv1.Job, error) {
 	getOptions := metav1.GetOptions{}
 	job, err := kubectx.Client.BatchV1().Jobs(kubectx.Namespace).Get(name, getOptions)
-	if err != nil && !apierrors.IsNotFound(err) {
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
