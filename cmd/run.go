@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
 	"github.com/uitml/frink/internal/k8s/retry"
-	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -50,7 +49,7 @@ var runCmd = &cobra.Command{
 		// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
 		k8s.OverrideJobSpec(job)
 
-		if err := deletePreviousJob(job); err != nil {
+		if err := deletePreviousJob(job.Name); err != nil {
 			return fmt.Errorf("unable to delete previous job: %w", err)
 		}
 
@@ -64,6 +63,10 @@ var runCmd = &cobra.Command{
 
 		if !follow {
 			return nil
+		}
+
+		if err := waitUntilStarted(job.Name); err != nil {
+			return fmt.Errorf("timed out waiting for job to start: %w", err)
 		}
 
 		// TODO: Ensure nil references are properly handled in this block.
@@ -105,20 +108,20 @@ func init() {
 	flags.BoolVarP(&follow, "follow", "f", false, "wait for job to start, then stream logs")
 }
 
-func deletePreviousJob(job *batchv1.Job) error {
-	oldJob, err := kubectx.GetJob(job.Name)
+func deletePreviousJob(name string) error {
+	job, err := kubectx.GetJob(name)
 	if err != nil {
 		return fmt.Errorf("unable to get previous job: %w", err)
 	}
 
-	if oldJob != nil {
+	if job != nil {
 		fmt.Println("Deleting previous job...")
-		err = kubectx.DeleteJob(oldJob.Name)
+		err = kubectx.DeleteJob(job.Name)
 		if err != nil {
 			return err
 		}
 
-		if err := waitUntilDeleted(oldJob); err != nil {
+		if err := waitUntilDeleted(job.Name); err != nil {
 			return err
 		}
 	}
@@ -126,14 +129,27 @@ func deletePreviousJob(job *batchv1.Job) error {
 	return nil
 }
 
-func waitUntilDeleted(job *batchv1.Job) error {
+func waitUntilDeleted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		oldJob, err := kubectx.GetJob(job.Name)
+		job, err := kubectx.GetJob(name)
 		if err != nil {
 			return false, err
 		}
 
-		return oldJob == nil, nil
+		return job == nil, nil
+	})
+
+	return err
+}
+
+func waitUntilStarted(name string) error {
+	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
+		job, err := kubectx.GetJob(name)
+		if err != nil {
+			return false, err
+		}
+
+		return job != nil && job.Status.Active > 0, nil
 	})
 
 	return err
