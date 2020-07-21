@@ -44,18 +44,16 @@ func init() {
 	flags.BoolVarP(&showAll, "all", "a", false, "show all jobs; active and terminated")
 }
 
-var (
-	headerNames = []string{
+func header() string {
+	columnNames := []string{
 		"NAME",
 		"STATUS",
 		"COMPLETIONS",
 		"DURATION",
 		"AGE",
 	}
-)
 
-func header() string {
-	return strings.Join(headerNames, "\t") + "\t"
+	return strings.Join(columnNames, "\t") + "\t"
 }
 
 func row(job batchv1.Job) string {
