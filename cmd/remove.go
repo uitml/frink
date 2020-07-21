@@ -21,7 +21,7 @@ var removeCmd = &cobra.Command{
 
 		name := args[0]
 
-		job, err := kubectx.GetJob(name)
+		job, err := client.GetJob(name)
 		if err != nil {
 			return fmt.Errorf("unable to get job: %w", err)
 		}
@@ -32,7 +32,7 @@ var removeCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Deleting job %s...\n", name)
-		if err := kubectx.DeleteJob(name); err != nil {
+		if err := client.DeleteJob(name); err != nil {
 			return fmt.Errorf("unable to delete job: %w", err)
 		}
 

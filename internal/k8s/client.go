@@ -7,19 +7,30 @@ package k8s
 import (
 	"fmt"
 
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeContext represents a concrete Kubernetes API context.
-type KubeContext struct {
-	Client    *kubernetes.Clientset
+// KubeClient exposes simple and testable Kubernetes API abstractions.
+type KubeClient interface {
+	CreateJob(job *batchv1.Job) error
+	DeleteJob(name string) error
+	GetJob(name string) (*batchv1.Job, error)
+	GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error)
+	ListJobs() (*batchv1.JobList, error)
+}
+
+// kubeContext represents a concrete Kubernetes API context.
+type kubeContext struct {
+	Clientset *kubernetes.Clientset
 	Namespace string
 }
 
 // Client returns a k8s client and namespace for the specified context.
-func Client(context, namespace string) (*KubeContext, error) {
+func Client(context, namespace string) (KubeClient, error) {
 	config, namespace, err := buildClientConfig(context, namespace)
 	if err != nil {
 		return nil, err
@@ -30,8 +41,7 @@ func Client(context, namespace string) (*KubeContext, error) {
 		return nil, err
 	}
 
-	kubectx := &KubeContext{client, namespace}
-
+	kubectx := &kubeContext{client, namespace}
 	return kubectx, nil
 }
 

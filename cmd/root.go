@@ -12,7 +12,7 @@ import (
 )
 
 // NOTE: Global package state; bad idea, but works for the time being.
-var kubectx *k8s.KubeContext
+var client k8s.KubeClient
 
 var rootCmd = &cobra.Command{
 	Use:   "frink",
@@ -22,12 +22,12 @@ var rootCmd = &cobra.Command{
 		context := viper.GetString("context")
 		namespace := viper.GetString("namespace")
 
-		ctx, err := k8s.Client(context, namespace)
+		kubectx, err := k8s.Client(context, namespace)
 		if err != nil {
 			return fmt.Errorf("unable to get kube client: %w", err)
 		}
 
-		kubectx = ctx
+		client = kubectx
 		return nil
 	},
 

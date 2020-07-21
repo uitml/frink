@@ -56,7 +56,7 @@ var runCmd = &cobra.Command{
 		// Try to create the job using retry.
 		// This handles scenarios where an existing job is still being terminated, etc.
 		fmt.Println("Creating job...")
-		err = retry.OnExists(backoff, func() error { return kubectx.CreateJob(job) })
+		err = retry.OnExists(backoff, func() error { return client.CreateJob(job) })
 		if err != nil {
 			return fmt.Errorf("unable to create job: %w", err)
 		}
@@ -71,7 +71,7 @@ var runCmd = &cobra.Command{
 
 		// TODO: Ensure nil references are properly handled in this block.
 		err = retry.OnError(backoff, apierrors.IsBadRequest, func() error {
-			req, err := kubectx.GetJobLogs(job.Name, k8s.DefaultLogOptions)
+			req, err := client.GetJobLogs(job.Name, k8s.DefaultLogOptions)
 			if err != nil {
 				return errors.Unwrap(err)
 			}
@@ -109,14 +109,14 @@ func init() {
 }
 
 func deletePreviousJob(name string) error {
-	job, err := kubectx.GetJob(name)
+	job, err := client.GetJob(name)
 	if err != nil {
 		return fmt.Errorf("unable to get previous job: %w", err)
 	}
 
 	if job != nil {
 		fmt.Println("Deleting previous job...")
-		err = kubectx.DeleteJob(job.Name)
+		err = client.DeleteJob(job.Name)
 		if err != nil {
 			return err
 		}
@@ -131,7 +131,7 @@ func deletePreviousJob(name string) error {
 
 func waitUntilDeleted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		job, err := kubectx.GetJob(name)
+		job, err := client.GetJob(name)
 		if err != nil {
 			return false, err
 		}
@@ -144,7 +144,7 @@ func waitUntilDeleted(name string) error {
 
 func waitUntilStarted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		job, err := kubectx.GetJob(name)
+		job, err := client.GetJob(name)
 		if err != nil {
 			return false, err
 		}

@@ -21,7 +21,7 @@ var logsCmd = &cobra.Command{
 		}
 
 		name := args[0]
-		req, err := kubectx.GetJobLogs(name, k8s.DefaultLogOptions)
+		req, err := client.GetJobLogs(name, k8s.DefaultLogOptions)
 		if err != nil {
 			return fmt.Errorf("unable to get logs: %w", errors.Unwrap(err))
 		}

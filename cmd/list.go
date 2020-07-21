@@ -20,7 +20,7 @@ var listCmd = &cobra.Command{
 	Short: "List jobs",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		jobs, err := kubectx.ListJobs()
+		jobs, err := client.ListJobs()
 		if err != nil {
 			return fmt.Errorf("could not list jobs: %w", err)
 		}
