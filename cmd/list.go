@@ -10,13 +10,11 @@ import (
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/cli"
-	"github.com/uitml/frink/internal/k8s"
 	batchv1 "k8s.io/api/batch/v1"
 )
 
 type ListContext struct {
 	cli.CommandContext
-	Client k8s.KubeClient
 
 	ShowAll bool
 }
@@ -37,12 +35,8 @@ func NewListCmd() *cobra.Command {
 	return cmd
 }
 
-func (ctx *ListContext) SetClient(client k8s.KubeClient) {
-	ctx.Client = client
-}
-
 func (ctx *ListContext) PreRun(cmd *cobra.Command, args []string) error {
-	return cli.Initialize(ctx)
+	return ctx.Initialize(cmd)
 }
 
 func (ctx *ListContext) Run(cmd *cobra.Command, args []string) error {

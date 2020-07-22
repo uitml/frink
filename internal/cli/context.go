@@ -1,24 +1,31 @@
 package cli
 
 import (
-	"github.com/spf13/viper"
+	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
 )
 
-type CommandContext interface {
-	SetClient(k8s.KubeClient)
+type CommandContext struct {
+	CommandInitializer
+	Client k8s.KubeClient
 }
 
-func Initialize(ctx CommandContext) error {
-	context := viper.GetString("context")
-	namespace := viper.GetString("namespace")
+type CommandInitializer interface {
+	Initialize(*cobra.Command) error
+}
 
-	client, err := k8s.Client(context, namespace)
+func (ctx *CommandContext) Initialize(cmd *cobra.Command) error {
+	cfg, err := ParseConfig(cmd)
 	if err != nil {
 		return err
 	}
 
-	ctx.SetClient(client)
+	client, err := k8s.Client(cfg.Context, cfg.Namespace)
+	if err != nil {
+		return err
+	}
+
+	ctx.Client = client
 
 	return nil
 }

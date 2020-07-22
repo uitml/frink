@@ -2,23 +2,35 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/uitml/frink/internal/cli"
 )
 
+// Build metadata that is typically overriden by build tools.
 var (
-	version string
-	commit  string
-	date    string
+	version = "0.0.0-dev"
+	commit  = "unknown"
+	date    = time.Now().Format(time.RFC3339)
 )
 
-var versionCmd = &cobra.Command{
-	Use: "version",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("frink v%s\n", version)
-	},
+type VersionContext struct {
+	cli.CommandContext
 }
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
+func NewVersionCmd() *cobra.Command {
+	ctx := &VersionContext{}
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: "Prints version information",
+
+		Run: ctx.Run,
+	}
+
+	return cmd
+}
+
+func (ctx *VersionContext) Run(cmd *cobra.Command, args []string) {
+	fmt.Fprintf(cmd.OutOrStdout(), "frink %s\n", version)
 }

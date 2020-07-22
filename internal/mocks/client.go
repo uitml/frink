@@ -3,20 +3,16 @@ package mocks
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
 type KubeClient struct {
+	Jobs []batchv1.Job
 }
 
 func (client *KubeClient) ListJobs() (*batchv1.JobList, error) {
 	jobs := &batchv1.JobList{
-		Items: []batchv1.Job{
-			{
-				ObjectMeta: v1.ObjectMeta{Name: "foo"},
-			},
-		},
+		Items: client.Jobs,
 	}
 
 	return jobs, nil
