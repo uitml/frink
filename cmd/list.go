@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -10,38 +9,57 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
+	"github.com/uitml/frink/internal/cli"
+	"github.com/uitml/frink/internal/k8s"
 	batchv1 "k8s.io/api/batch/v1"
 )
 
-var showAll bool
+type ListContext struct {
+	cli.CommandContext
+	Client k8s.KubeClient
 
-var listCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List jobs",
-
-	RunE: func(cmd *cobra.Command, args []string) error {
-		jobs, err := client.ListJobs()
-		if err != nil {
-			return fmt.Errorf("could not list jobs: %w", err)
-		}
-
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-		defer w.Flush()
-
-		fmt.Fprintln(w, header())
-		for _, job := range jobs.Items {
-			fmt.Fprintln(w, row(job))
-		}
-
-		return nil
-	},
+	ShowAll bool
 }
 
-func init() {
-	rootCmd.AddCommand(listCmd)
+func NewListCmd() *cobra.Command {
+	ctx := &ListContext{}
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "List jobs",
 
-	flags := listCmd.Flags()
-	flags.BoolVarP(&showAll, "all", "a", false, "show all jobs; active and terminated")
+		PreRunE: ctx.PreRun,
+		RunE:    ctx.Run,
+	}
+
+	flags := cmd.Flags()
+	flags.BoolVarP(&ctx.ShowAll, "all", "a", false, "show all jobs; active and terminated")
+
+	return cmd
+}
+
+func (ctx *ListContext) SetClient(client k8s.KubeClient) {
+	ctx.Client = client
+}
+
+func (ctx *ListContext) PreRun(cmd *cobra.Command, args []string) error {
+	return cli.Initialize(ctx)
+}
+
+func (ctx *ListContext) Run(cmd *cobra.Command, args []string) error {
+	jobs, err := ctx.Client.ListJobs()
+	if err != nil {
+		return fmt.Errorf("could not list jobs: %w", err)
+	}
+
+	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 3, ' ', 0)
+	defer w.Flush()
+
+	fmt.Fprintln(w, header())
+	for _, job := range jobs.Items {
+		fmt.Fprintln(w, row(job))
+	}
+
+	return nil
 }
 
 func header() string {
