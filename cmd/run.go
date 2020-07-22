@@ -65,7 +65,7 @@ var runCmd = &cobra.Command{
 			return nil
 		}
 
-		if err := waitUntilStarted(job.Name); err != nil {
+		if err := waitUntilJobStarted(job.Name); err != nil {
 			return fmt.Errorf("timed out waiting for job to start: %w", err)
 		}
 
@@ -121,7 +121,7 @@ func deletePreviousJob(name string) error {
 			return err
 		}
 
-		if err := waitUntilDeleted(job.Name); err != nil {
+		if err := waitUntilJobDeleted(job.Name); err != nil {
 			return err
 		}
 	}
@@ -129,7 +129,7 @@ func deletePreviousJob(name string) error {
 	return nil
 }
 
-func waitUntilDeleted(name string) error {
+func waitUntilJobDeleted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
 		job, err := client.GetJob(name)
 		if err != nil {
@@ -142,7 +142,7 @@ func waitUntilDeleted(name string) error {
 	return err
 }
 
-func waitUntilStarted(name string) error {
+func waitUntilJobStarted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
 		job, err := client.GetJob(name)
 		if err != nil {

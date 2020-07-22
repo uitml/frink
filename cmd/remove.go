@@ -40,7 +40,7 @@ var removeCmd = &cobra.Command{
 			return nil
 		}
 
-		if err := waitUntilDeleted(name); err != nil {
+		if err := waitUntilJobDeleted(name); err != nil {
 			return fmt.Errorf("timed out waiting for job to be deleted: %w", err)
 		}
 
