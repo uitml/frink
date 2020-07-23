@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRoot_WithNoCommand(t *testing.T) {
+func TestRoot_RawCLI_NoCommand(t *testing.T) {
 	var out strings.Builder
 	cmd := newRootCmd()
 	cmd.SetOut(&out)
@@ -17,7 +17,7 @@ func TestRoot_WithNoCommand(t *testing.T) {
 	assert.Contains(t, out.String(), "Usage:")
 }
 
-func TestRoot_WithIncorrectCommand(t *testing.T) {
+func TestRoot_RawCLI_UnknownCommand(t *testing.T) {
 	var out strings.Builder
 	cmd := newRootCmd()
 	cmd.SetOut(&out)
