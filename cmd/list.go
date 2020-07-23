@@ -84,10 +84,10 @@ func status(job batchv1.Job) string {
 	switch {
 	case job.Status.Active > 0:
 		return "Active"
-	case job.Spec.Completions == nil || *job.Spec.Completions == job.Status.Succeeded:
-		return "Succeeded"
 	case job.Status.Failed > 0:
 		return "Failed"
+	case job.Spec.Completions == nil && job.Status.Succeeded > 0 || job.Spec.Completions != nil && *job.Spec.Completions == job.Status.Succeeded:
+		return "Succeeded"
 	}
 
 	return "Stopped"
