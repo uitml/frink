@@ -7,14 +7,14 @@ import (
 	"github.com/uitml/frink/internal/cli"
 )
 
-type RemoveContext struct {
+type removeContext struct {
 	cli.CommandContext
 
 	WaitForDelete bool
 }
 
-func NewRemoveCmd() *cobra.Command {
-	ctx := &RemoveContext{}
+func newRemoveCmd() *cobra.Command {
+	ctx := &removeContext{}
 	cmd := &cobra.Command{
 		Use:   "rm <name>",
 		Short: "Remove job from cluster",
@@ -29,11 +29,11 @@ func NewRemoveCmd() *cobra.Command {
 	return cmd
 }
 
-func (ctx *RemoveContext) PreRun(cmd *cobra.Command, args []string) error {
+func (ctx *removeContext) PreRun(cmd *cobra.Command, args []string) error {
 	return ctx.Initialize(cmd)
 }
 
-func (ctx *RemoveContext) Run(cmd *cobra.Command, args []string) error {
+func (ctx *removeContext) Run(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("job name must be specified")
 	}

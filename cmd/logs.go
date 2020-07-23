@@ -12,12 +12,12 @@ import (
 	"github.com/uitml/frink/internal/k8s"
 )
 
-type LogsContext struct {
+type logsContext struct {
 	cli.CommandContext
 }
 
-func NewLogsCmd() *cobra.Command {
-	ctx := &LogsContext{}
+func newLogsCmd() *cobra.Command {
+	ctx := &logsContext{}
 	cmd := &cobra.Command{
 		Use:     "logs <name>",
 		Short:   "Fetch the logs of a job",
@@ -30,11 +30,11 @@ func NewLogsCmd() *cobra.Command {
 	return cmd
 }
 
-func (ctx *LogsContext) PreRun(cmd *cobra.Command, args []string) error {
+func (ctx *logsContext) PreRun(cmd *cobra.Command, args []string) error {
 	return ctx.Initialize(cmd)
 }
 
-func (ctx *LogsContext) Run(cmd *cobra.Command, args []string) error {
+func (ctx *logsContext) Run(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("job name must be specified")
 	}

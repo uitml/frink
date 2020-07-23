@@ -13,14 +13,14 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 )
 
-type ListContext struct {
+type listContext struct {
 	cli.CommandContext
 
 	ShowAll bool
 }
 
-func NewListCmd() *cobra.Command {
-	ctx := &ListContext{}
+func newListCmd() *cobra.Command {
+	ctx := &listContext{}
 	cmd := &cobra.Command{
 		Use:   "ls",
 		Short: "List jobs",
@@ -35,11 +35,11 @@ func NewListCmd() *cobra.Command {
 	return cmd
 }
 
-func (ctx *ListContext) PreRun(cmd *cobra.Command, args []string) error {
+func (ctx *listContext) PreRun(cmd *cobra.Command, args []string) error {
 	return ctx.Initialize(cmd)
 }
 
-func (ctx *ListContext) Run(cmd *cobra.Command, args []string) error {
+func (ctx *listContext) Run(cmd *cobra.Command, args []string) error {
 	jobs, err := ctx.Client.ListJobs()
 	if err != nil {
 		return fmt.Errorf("could not list jobs: %w", err)

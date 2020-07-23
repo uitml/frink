@@ -9,7 +9,7 @@ import (
 
 func TestRoot_WithNoCommand(t *testing.T) {
 	var out strings.Builder
-	cmd := NewRootCmd()
+	cmd := newRootCmd()
 	cmd.SetOut(&out)
 	err := cmd.Execute()
 
@@ -19,7 +19,7 @@ func TestRoot_WithNoCommand(t *testing.T) {
 
 func TestRoot_WithIncorrectCommand(t *testing.T) {
 	var out strings.Builder
-	cmd := NewRootCmd()
+	cmd := newRootCmd()
 	cmd.SetOut(&out)
 	cmd.SetArgs([]string{"foo"})
 	err := cmd.Execute()

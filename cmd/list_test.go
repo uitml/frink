@@ -13,10 +13,10 @@ import (
 
 func TestList_WithNoJobs(t *testing.T) {
 	var out strings.Builder
-	cmd := NewListCmd()
+	cmd := newListCmd()
 	cmd.SetOut(&out)
 
-	ctx := &ListContext{
+	ctx := &listContext{
 		CommandContext: cli.CommandContext{
 			Client: &mocks.KubeClient{
 				Jobs: []batchv1.Job{

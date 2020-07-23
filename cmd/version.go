@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/uitml/frink/internal/cli"
 )
 
 // Build metadata that is typically overriden by build tools.
@@ -15,15 +14,14 @@ var (
 	date    = time.Now().Format(time.RFC3339)
 )
 
-type VersionContext struct {
-	cli.CommandContext
+type versionContext struct {
 }
 
-func NewVersionCmd() *cobra.Command {
-	ctx := &VersionContext{}
+func newVersionCmd() *cobra.Command {
+	ctx := &versionContext{}
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "Prints version information",
+		Short: "Print version information",
 
 		Run: ctx.Run,
 	}
@@ -31,6 +29,6 @@ func NewVersionCmd() *cobra.Command {
 	return cmd
 }
 
-func (ctx *VersionContext) Run(cmd *cobra.Command, args []string) {
+func (ctx *versionContext) Run(cmd *cobra.Command, args []string) {
 	fmt.Fprintf(cmd.OutOrStdout(), "frink %s\n", version)
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/uitml/frink/internal/cli"
 )
 
-func NewRootCmd() *cobra.Command {
+func newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "frink",
 		Short: "Frink simplifies your Springfield workflows",
@@ -21,11 +21,11 @@ func NewRootCmd() *cobra.Command {
 	pflags.String("context", "", "name of the kubeconfig context to use")
 	pflags.StringP("namespace", "n", "", "cluster namespace to use")
 
-	cmd.AddCommand(NewListCmd())
-	cmd.AddCommand(NewLogsCmd())
-	cmd.AddCommand(NewRemoveCmd())
-	cmd.AddCommand(NewRunCmd())
-	cmd.AddCommand(NewVersionCmd())
+	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newLogsCmd())
+	cmd.AddCommand(newRemoveCmd())
+	cmd.AddCommand(newRunCmd())
+	cmd.AddCommand(newVersionCmd())
 
 	cli.DisableFlagsInUseLine(cmd)
 
@@ -34,7 +34,7 @@ func NewRootCmd() *cobra.Command {
 
 // Execute executes the root command using os.Args, running through the command tree and invoking the matching subcommand.
 func Execute() {
-	cmd := NewRootCmd()
+	cmd := newRootCmd()
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}

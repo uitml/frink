@@ -22,14 +22,14 @@ var backoff = wait.Backoff{
 	Steps:    1200,
 }
 
-type RunContext struct {
+type runContext struct {
 	cli.CommandContext
 
 	Follow bool
 }
 
-func NewRunCmd() *cobra.Command {
-	ctx := &RunContext{}
+func newRunCmd() *cobra.Command {
+	ctx := &runContext{}
 	cmd := &cobra.Command{
 		Use:   "run <file>",
 		Short: "Schedule a job on the cluster",
@@ -44,11 +44,11 @@ func NewRunCmd() *cobra.Command {
 	return cmd
 }
 
-func (ctx *RunContext) PreRun(cmd *cobra.Command, args []string) error {
+func (ctx *runContext) PreRun(cmd *cobra.Command, args []string) error {
 	return ctx.Initialize(cmd)
 }
 
-func (ctx *RunContext) Run(cmd *cobra.Command, args []string) error {
+func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("job specification file must be specified")
 	}
