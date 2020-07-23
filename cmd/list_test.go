@@ -11,7 +11,24 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestList_WithNoJobs(t *testing.T) {
+func TestList_NoJobs(t *testing.T) {
+	var out strings.Builder
+	cmd := newListCmd()
+	cmd.SetOut(&out)
+
+	ctx := &listContext{
+		CommandContext: cli.CommandContext{
+			Client: &mocks.KubeClient{},
+		},
+	}
+
+	err := ctx.Run(cmd, []string{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, strings.Count(out.String(), "\n"))
+}
+
+func TestList_OneSuccessfulJob(t *testing.T) {
 	var out strings.Builder
 	cmd := newListCmd()
 	cmd.SetOut(&out)
