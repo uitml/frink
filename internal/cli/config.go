@@ -10,11 +10,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Config holds user settings, some of which might be overridable by command-line flags.
 type Config struct {
 	Context   string
 	Namespace string
 }
 
+// ParseConfig reads in user configuration from files, with some settings optionally being overridable via command-line flags.
 func ParseConfig(cmd *cobra.Command) (*Config, error) {
 	v := viper.New()
 	v.AddConfigPath(configPath())

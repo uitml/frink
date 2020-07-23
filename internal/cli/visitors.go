@@ -1,4 +1,4 @@
-// Package cli contains various CLI-focused utility functions.
+// Package cli contains various shared command-line functionality, such as command algorithms, command context, and configuration.
 package cli
 
 import "github.com/spf13/cobra"
