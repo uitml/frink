@@ -39,6 +39,9 @@ func TestList_OneSuccessfulJob(t *testing.T) {
 				Jobs: []batchv1.Job{
 					{
 						ObjectMeta: v1.ObjectMeta{Name: "foo"},
+						Status: batchv1.JobStatus{
+							Succeeded: 1,
+						},
 					},
 				},
 			},
@@ -49,4 +52,87 @@ func TestList_OneSuccessfulJob(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), "foo")
+	assert.Contains(t, out.String(), "Succeeded")
+}
+
+func TestList_OneFailedJob(t *testing.T) {
+	var out strings.Builder
+	cmd := newListCmd()
+	cmd.SetOut(&out)
+
+	ctx := &listContext{
+		CommandContext: cli.CommandContext{
+			Client: &mocks.KubeClient{
+				Jobs: []batchv1.Job{
+					{
+						ObjectMeta: v1.ObjectMeta{Name: "foo"},
+						Status: batchv1.JobStatus{
+							Failed: 1,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := ctx.Run(cmd, []string{})
+
+	assert.NoError(t, err)
+	assert.Contains(t, out.String(), "foo")
+	assert.Contains(t, out.String(), "Failed")
+}
+
+func TestList_OneActiveJob(t *testing.T) {
+	var out strings.Builder
+	cmd := newListCmd()
+	cmd.SetOut(&out)
+
+	ctx := &listContext{
+		CommandContext: cli.CommandContext{
+			Client: &mocks.KubeClient{
+				Jobs: []batchv1.Job{
+					{
+						ObjectMeta: v1.ObjectMeta{Name: "foo"},
+						Status: batchv1.JobStatus{
+							Active: 1,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := ctx.Run(cmd, []string{})
+
+	assert.NoError(t, err)
+	assert.Contains(t, out.String(), "foo")
+	assert.Contains(t, out.String(), "Active")
+}
+
+func TestList_OneStoppedJob(t *testing.T) {
+	var out strings.Builder
+	cmd := newListCmd()
+	cmd.SetOut(&out)
+
+	ctx := &listContext{
+		CommandContext: cli.CommandContext{
+			Client: &mocks.KubeClient{
+				Jobs: []batchv1.Job{
+					{
+						ObjectMeta: v1.ObjectMeta{Name: "foo"},
+						Spec:       batchv1.JobSpec{Completions: nil},
+						Status: batchv1.JobStatus{
+							Succeeded: 0,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := ctx.Run(cmd, []string{})
+
+	assert.NoError(t, err)
+	assert.Contains(t, out.String(), "foo")
+	assert.Contains(t, out.String(), "Stopped")
 }
