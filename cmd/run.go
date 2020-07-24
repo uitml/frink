@@ -70,7 +70,7 @@ func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
 	// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
 	k8s.OverrideJobSpec(job)
 
-	if err := deletePreviousJob(job.Name, ctx.Client); err != nil {
+	if err := ctx.DeletePreviousJob(job.Name); err != nil {
 		return fmt.Errorf("unable to delete previous job: %w", err)
 	}
 
@@ -86,7 +86,7 @@ func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	if err := waitUntilJobStarted(job.Name, ctx.Client); err != nil {
+	if err := ctx.WaitUntilJobStarted(job.Name); err != nil {
 		return fmt.Errorf("timed out waiting for job to start: %w", err)
 	}
 
@@ -121,20 +121,20 @@ func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deletePreviousJob(name string, client k8s.KubeClient) error {
-	job, err := client.GetJob(name)
+func (ctx *runContext) DeletePreviousJob(name string) error {
+	job, err := ctx.Client.GetJob(name)
 	if err != nil {
-		return fmt.Errorf("unable to get previous job: %w", err)
+		return err
 	}
 
 	if job != nil {
 		fmt.Println("Deleting previous job...")
-		err = client.DeleteJob(job.Name)
+		err = ctx.Client.DeleteJob(job.Name)
 		if err != nil {
 			return err
 		}
 
-		if err := waitUntilJobDeleted(job.Name, client); err != nil {
+		if err := ctx.WaitUntilJobDeleted(job.Name); err != nil {
 			return err
 		}
 	}
@@ -142,9 +142,9 @@ func deletePreviousJob(name string, client k8s.KubeClient) error {
 	return nil
 }
 
-func waitUntilJobDeleted(name string, client k8s.KubeClient) error {
+func (ctx *runContext) WaitUntilJobDeleted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		job, err := client.GetJob(name)
+		job, err := ctx.Client.GetJob(name)
 		if err != nil {
 			return false, err
 		}
@@ -155,9 +155,9 @@ func waitUntilJobDeleted(name string, client k8s.KubeClient) error {
 	return err
 }
 
-func waitUntilJobStarted(name string, client k8s.KubeClient) error {
+func (ctx *runContext) WaitUntilJobStarted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		job, err := client.GetJob(name)
+		job, err := ctx.Client.GetJob(name)
 		if err != nil {
 			return false, err
 		}
