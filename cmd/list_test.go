@@ -44,6 +44,10 @@ var (
 	}
 )
 
+func jobList(jobs ...batchv1.Job) *batchv1.JobList {
+	return &batchv1.JobList{Items: jobs}
+}
+
 // Top-level functionality.
 
 func TestListPreRun(t *testing.T) {
@@ -56,18 +60,21 @@ func TestListPreRun(t *testing.T) {
 }
 
 func TestListRunBrokenClient(t *testing.T) {
+	client := &mocks.KubeClient{}
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
-			Client: &mocks.KubeClient{
-				Err: errors.New("foo"),
-			},
+			Client: client,
 		},
 	}
+
+	client.On("ListJobs").Return(nil, errors.New("foo"))
 
 	cmd := newListCmd()
 	err := ctx.Run(cmd, []string{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "foo")
+
+	client.AssertExpectations(t)
 }
 
 // Raw command output
@@ -77,15 +84,21 @@ func TestListOutputWithNoJobs(t *testing.T) {
 	cmd := newListCmd()
 	cmd.SetOut(&out)
 
+	client := &mocks.KubeClient{}
+
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
-			Client: &mocks.KubeClient{},
+			Client: client,
 		},
 	}
+
+	client.On("ListJobs").Return(jobList(), nil)
 
 	err := ctx.Run(cmd, []string{})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, strings.Count(out.String(), "\n"))
+
+	client.AssertExpectations(t)
 }
 
 func TestListOutputWithJobs(t *testing.T) {
@@ -93,20 +106,22 @@ func TestListOutputWithJobs(t *testing.T) {
 	cmd := newListCmd()
 	cmd.SetOut(&out)
 
+	client := &mocks.KubeClient{}
+
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
-			Client: &mocks.KubeClient{
-				Jobs: []batchv1.Job{
-					successfulJob,
-				},
-			},
+			Client: client,
 		},
 	}
+
+	client.On("ListJobs").Return(jobList(successfulJob), nil)
 
 	err := ctx.Run(cmd, []string{})
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), "foo")
 	assert.Contains(t, out.String(), "Succeeded")
+
+	client.AssertExpectations(t)
 }
 
 // Table formatting

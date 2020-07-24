@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	"github.com/stretchr/testify/mock"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
@@ -10,55 +11,43 @@ import (
 
 // KubeClient is a mock k8s.KubeClient for interacting with a fake Kubernetes API, primarily intended for unit testing.
 type KubeClient struct {
-	Jobs []batchv1.Job
-	Err  error
+	mock.Mock
 }
 
 // ListJobs returns a list of jobs based on the Jobs field in KubeClient.
 func (client *KubeClient) ListJobs() (*batchv1.JobList, error) {
-	if client.Err != nil {
-		return nil, client.Err
-	}
+	args := client.Called()
+	jobs, _ := args.Get(0).(*batchv1.JobList)
 
-	jobs := &batchv1.JobList{
-		Items: client.Jobs,
-	}
-
-	return jobs, client.Err
+	return jobs, args.Error(1)
 }
 
 // CreateJob simulates creating a job.
 func (client *KubeClient) CreateJob(job *batchv1.Job) error {
-	if client.Err != nil {
-		return client.Err
-	}
+	args := client.Called()
 
-	return nil
+	return args.Error(0)
 }
 
 // DeleteJob simulates deleting a job.
 func (client *KubeClient) DeleteJob(name string) error {
-	if client.Err != nil {
-		return client.Err
-	}
+	args := client.Called()
 
-	return nil
+	return args.Error(0)
 }
 
 // GetJob searches through the items in the Jobs field in KubeClient, returning the first item with a matching name.
 func (client *KubeClient) GetJob(name string) (*batchv1.Job, error) {
-	if client.Err != nil {
-		return nil, client.Err
-	}
+	args := client.Called()
+	job, _ := args.Get(0).(*batchv1.Job)
 
-	return nil, nil
+	return job, args.Error(1)
 }
 
 // GetJobLogs simulates returning a rest.Request that will stream logs for a the job with the matching name.
 func (client *KubeClient) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
-	if client.Err != nil {
-		return nil, client.Err
-	}
+	args := client.Called()
+	req, _ := args.Get(0).(*rest.Request)
 
-	return nil, nil
+	return req, args.Error(1)
 }
