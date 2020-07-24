@@ -11,33 +11,54 @@ import (
 // KubeClient is a mock k8s.KubeClient for interacting with a fake Kubernetes API, primarily intended for unit testing.
 type KubeClient struct {
 	Jobs []batchv1.Job
+	Err  error
 }
 
 // ListJobs returns a list of jobs based on the Jobs field in KubeClient.
 func (client *KubeClient) ListJobs() (*batchv1.JobList, error) {
+	if client.Err != nil {
+		return nil, client.Err
+	}
+
 	jobs := &batchv1.JobList{
 		Items: client.Jobs,
 	}
 
-	return jobs, nil
+	return jobs, client.Err
 }
 
 // CreateJob simulates creating a job.
 func (client *KubeClient) CreateJob(job *batchv1.Job) error {
+	if client.Err != nil {
+		return client.Err
+	}
+
 	return nil
 }
 
 // DeleteJob simulates deleting a job.
 func (client *KubeClient) DeleteJob(name string) error {
+	if client.Err != nil {
+		return client.Err
+	}
+
 	return nil
 }
 
 // GetJob searches through the items in the Jobs field in KubeClient, returning the first item with a matching name.
 func (client *KubeClient) GetJob(name string) (*batchv1.Job, error) {
+	if client.Err != nil {
+		return nil, client.Err
+	}
+
 	return nil, nil
 }
 
 // GetJobLogs simulates returning a rest.Request that will stream logs for a the job with the matching name.
 func (client *KubeClient) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
+	if client.Err != nil {
+		return nil, client.Err
+	}
+
 	return nil, nil
 }
