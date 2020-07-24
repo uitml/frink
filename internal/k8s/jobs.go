@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"regexp"
 
+	"github.com/uitml/frink/internal/util"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,7 +20,7 @@ var defaultTerminationMessagePolicy = corev1.TerminationMessageFallbackToLogsOnE
 var (
 	// Do not restart failing jobs.
 	defaultRestartPolicy = corev1.RestartPolicyOnFailure
-	defaultBackoffLimit  = int32Ptr(0)
+	defaultBackoffLimit  = util.Int32Ptr(0)
 )
 
 // DefaultLogOptions is the default set of options used when retrieving logs.
@@ -58,7 +59,7 @@ func (kubectx *kubeContext) GetJob(name string) (*batchv1.Job, error) {
 func (kubectx *kubeContext) DeleteJob(name string) error {
 	deletePolicy := metav1.DeletePropagationForeground
 	deleteOptions := &metav1.DeleteOptions{
-		GracePeriodSeconds: int64Ptr(0),
+		GracePeriodSeconds: util.Int64Ptr(0),
 		PropagationPolicy:  &deletePolicy,
 	}
 
@@ -159,6 +160,3 @@ func setRestartPolicy(job *batchv1.Job) {
 	job.Spec.BackoffLimit = defaultBackoffLimit
 	job.Spec.Template.Spec.RestartPolicy = defaultRestartPolicy
 }
-
-func int32Ptr(i int32) *int32 { return &i }
-func int64Ptr(i int64) *int64 { return &i }
