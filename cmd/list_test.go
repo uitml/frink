@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestList_NoJobs(t *testing.T) {
+func TestListOutputWithNoJobs(t *testing.T) {
 	var out strings.Builder
 	cmd := newListCmd()
 	cmd.SetOut(&out)
@@ -28,7 +28,7 @@ func TestList_NoJobs(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(out.String(), "\n"))
 }
 
-func TestList_OneSuccessfulJob(t *testing.T) {
+func TestListOutputWithJobs(t *testing.T) {
 	var out strings.Builder
 	cmd := newListCmd()
 	cmd.SetOut(&out)
@@ -55,84 +55,56 @@ func TestList_OneSuccessfulJob(t *testing.T) {
 	assert.Contains(t, out.String(), "Succeeded")
 }
 
-func TestList_OneFailedJob(t *testing.T) {
-	var out strings.Builder
-	cmd := newListCmd()
-	cmd.SetOut(&out)
-
-	ctx := &listContext{
-		CommandContext: cli.CommandContext{
-			Client: &mocks.KubeClient{
-				Jobs: []batchv1.Job{
-					{
-						ObjectMeta: v1.ObjectMeta{Name: "foo"},
-						Status: batchv1.JobStatus{
-							Failed: 1,
-						},
-					},
-				},
-			},
+func TestStatusActiveJob(t *testing.T) {
+	job := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		Status: batchv1.JobStatus{
+			Active: 1,
 		},
 	}
 
-	err := ctx.Run(cmd, []string{})
+	out := status(job)
 
-	assert.NoError(t, err)
-	assert.Contains(t, out.String(), "foo")
-	assert.Contains(t, out.String(), "Failed")
+	assert.Equal(t, out, "Active")
 }
 
-func TestList_OneActiveJob(t *testing.T) {
-	var out strings.Builder
-	cmd := newListCmd()
-	cmd.SetOut(&out)
-
-	ctx := &listContext{
-		CommandContext: cli.CommandContext{
-			Client: &mocks.KubeClient{
-				Jobs: []batchv1.Job{
-					{
-						ObjectMeta: v1.ObjectMeta{Name: "foo"},
-						Status: batchv1.JobStatus{
-							Active: 1,
-						},
-					},
-				},
-			},
+func TestStatusFailedJob(t *testing.T) {
+	job := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		Status: batchv1.JobStatus{
+			Failed: 1,
 		},
 	}
 
-	err := ctx.Run(cmd, []string{})
+	out := status(job)
 
-	assert.NoError(t, err)
-	assert.Contains(t, out.String(), "foo")
-	assert.Contains(t, out.String(), "Active")
+	assert.Equal(t, out, "Failed")
 }
 
-func TestList_OneStoppedJob(t *testing.T) {
-	var out strings.Builder
-	cmd := newListCmd()
-	cmd.SetOut(&out)
-
-	ctx := &listContext{
-		CommandContext: cli.CommandContext{
-			Client: &mocks.KubeClient{
-				Jobs: []batchv1.Job{
-					{
-						ObjectMeta: v1.ObjectMeta{Name: "foo"},
-						Spec:       batchv1.JobSpec{Completions: nil},
-						Status: batchv1.JobStatus{
-							Succeeded: 0,
-						},
-					},
-				},
-			},
+func TestStatusStoppedJob(t *testing.T) {
+	job := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		Spec:       batchv1.JobSpec{Completions: nil},
+		Status: batchv1.JobStatus{
+			Succeeded: 0,
 		},
 	}
 
-	err := ctx.Run(cmd, []string{})
+	out := status(job)
 
-	assert.NoError(t, err)
-	assert.Contains(t, out.String(), "foo")
-	assert.Contains(t, out.String(), "Stopped")
+	assert.Equal(t, out, "Stopped")
+}
+
+func TestStatusSuccessfulJob(t *testing.T) {
+	job := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		Spec:       batchv1.JobSpec{Completions: nil},
+		Status: batchv1.JobStatus{
+			Succeeded: 1,
+		},
+	}
+
+	out := status(job)
+
+	assert.Equal(t, "Succeeded", out)
 }
