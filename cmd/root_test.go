@@ -27,3 +27,11 @@ func TestRootUnknownCommand(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, out.String(), "unknown command")
 }
+
+func TestRootFlagsInUseLineDisabled(t *testing.T) {
+	cmd := newRootCmd()
+
+	for _, c := range cmd.Commands() {
+		assert.Truef(t, c.DisableFlagsInUseLine, "Command: %s", c.Name())
+	}
+}
