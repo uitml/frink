@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"io"
+
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/k8s"
 )
@@ -8,6 +10,14 @@ import (
 // CommandContext is a common context facility used by all commands in the cmd package that interact with the Kubernetes API.
 type CommandContext struct {
 	CommandInitializer
+
+	// Out can be used to write to an output stream, typically stdout.
+	Out io.Writer
+
+	// Err can be used to write to an error output stream, typically stderr.
+	Err io.Writer
+
+	// Client can be used for interacting with the Kubernetes API.
 	Client k8s.KubeClient
 }
 
@@ -34,6 +44,8 @@ func (ctx *CommandContext) Initialize(cmd *cobra.Command) error {
 		return err
 	}
 
+	ctx.Out = cmd.OutOrStderr()
+	ctx.Err = cmd.ErrOrStderr()
 	ctx.Client = client
 
 	return nil

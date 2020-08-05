@@ -76,7 +76,7 @@ func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
 
 	// Try to create the job using retry.
 	// This handles scenarios where an existing job is still being terminated, etc.
-	fmt.Println("Creating job...")
+	fmt.Fprintln(ctx.Out, "Creating job...")
 	err = retry.OnExists(backoff, func() error { return ctx.Client.CreateJob(job) })
 	if err != nil {
 		return fmt.Errorf("unable to create job: %w", err)
@@ -128,7 +128,7 @@ func (ctx *runContext) DeletePreviousJob(name string) error {
 	}
 
 	if job != nil {
-		fmt.Println("Deleting previous job...")
+		fmt.Fprintln(ctx.Out, "Deleting previous job...")
 		err = ctx.Client.DeleteJob(job.Name)
 		if err != nil {
 			return err
