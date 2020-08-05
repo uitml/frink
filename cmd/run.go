@@ -24,12 +24,15 @@ var backoff = wait.Backoff{
 
 type runContext struct {
 	cli.CommandContext
+	JobParser k8s.JobParser
 
 	Follow bool
 }
 
 func newRunCmd() *cobra.Command {
-	ctx := &runContext{}
+	parser := k8s.NewJobParser()
+	ctx := &runContext{JobParser: parser}
+
 	cmd := &cobra.Command{
 		Use:   "run <file>",
 		Short: "Schedule a job on the cluster",
@@ -53,16 +56,7 @@ func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("job specification file must be specified")
 	}
 
-	file := args[0]
-	if _, err := os.Stat(file); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("specified file does not exist: %v", file)
-		}
-
-		return fmt.Errorf("unable to access file: %w", err)
-	}
-
-	job, err := k8s.ParseJob(file)
+	job, err := ctx.JobParser.Parse(args[0])
 	if err != nil {
 		return fmt.Errorf("unable to parse job: %w", err)
 	}
