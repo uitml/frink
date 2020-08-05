@@ -24,21 +24,21 @@ func (client *KubeClient) ListJobs() (*batchv1.JobList, error) {
 
 // CreateJob simulates creating a job.
 func (client *KubeClient) CreateJob(job *batchv1.Job) error {
-	args := client.Called()
+	args := client.Called(job)
 
 	return args.Error(0)
 }
 
 // DeleteJob simulates deleting a job.
 func (client *KubeClient) DeleteJob(name string) error {
-	args := client.Called()
+	args := client.Called(name)
 
 	return args.Error(0)
 }
 
 // GetJob searches through the items in the Jobs field in KubeClient, returning the first item with a matching name.
 func (client *KubeClient) GetJob(name string) (*batchv1.Job, error) {
-	args := client.Called()
+	args := client.Called(name)
 	job, _ := args.Get(0).(*batchv1.Job)
 
 	return job, args.Error(1)
@@ -46,7 +46,7 @@ func (client *KubeClient) GetJob(name string) (*batchv1.Job, error) {
 
 // GetJobLogs simulates returning a rest.Request that will stream logs for a the job with the matching name.
 func (client *KubeClient) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
-	args := client.Called()
+	args := client.Called(name, opts)
 	req, _ := args.Get(0).(*rest.Request)
 
 	return req, args.Error(1)
