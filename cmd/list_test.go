@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uitml/frink/internal/cli"
-	"github.com/uitml/frink/internal/mocks"
+	"github.com/uitml/frink/internal/mock"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -60,7 +60,7 @@ func TestListPreRun(t *testing.T) {
 }
 
 func TestListRunBrokenClient(t *testing.T) {
-	client := &mocks.KubeClient{}
+	client := &mock.KubeClient{}
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
 			Client: client,
@@ -84,7 +84,7 @@ func TestListOutputWithNoJobs(t *testing.T) {
 	cmd := newListCmd()
 	cmd.SetOut(&out)
 
-	client := &mocks.KubeClient{}
+	client := &mock.KubeClient{}
 
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
@@ -106,7 +106,7 @@ func TestListOutputWithJobs(t *testing.T) {
 	cmd := newListCmd()
 	cmd.SetOut(&out)
 
-	client := &mocks.KubeClient{}
+	client := &mock.KubeClient{}
 
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{

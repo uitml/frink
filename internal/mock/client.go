@@ -1,6 +1,6 @@
-// Package mocks contains utilities intended for mocking out functionality in test code.
+// Package mock contains utilities intended for mocking out functionality in test code.
 // Most notably, it contains mocks for interacting with the Kubernetes API.
-package mocks
+package mock
 
 import (
 	"github.com/stretchr/testify/mock"
