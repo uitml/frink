@@ -5,23 +5,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/uitml/frink/internal/cli"
-	"github.com/uitml/frink/internal/mocks"
+	"github.com/uitml/frink/internal/mock"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type jobParser struct {
-	mock.Mock
-}
-
-func (p *jobParser) Parse(filename string) (*batchv1.Job, error) {
-	args := p.Called()
-	job, _ := args.Get(0).(*batchv1.Job)
-
-	return job, args.Error(1)
-}
 
 // Top-level functionality.
 
@@ -39,8 +27,8 @@ func TestRunRun(t *testing.T) {
 	cmd := newRunCmd()
 	cmd.SetOut(&out)
 
-	client := &mocks.KubeClient{}
-	parser := &jobParser{}
+	client := &mock.KubeClient{}
+	parser := &mock.JobParser{}
 
 	ctx := &runContext{
 		CommandContext: cli.CommandContext{
