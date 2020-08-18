@@ -10,26 +10,26 @@ import (
 	"github.com/uitml/frink/internal/cli"
 	"github.com/uitml/frink/internal/mock"
 	batchv1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
 	activeJob = batchv1.Job{
-		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Status: batchv1.JobStatus{
 			Active: 1,
 		},
 	}
 
 	failedJob = batchv1.Job{
-		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Status: batchv1.JobStatus{
 			Failed: 1,
 		},
 	}
 
 	stoppedJob = batchv1.Job{
-		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec:       batchv1.JobSpec{Completions: nil},
 		Status: batchv1.JobStatus{
 			Succeeded: 0,
@@ -37,7 +37,7 @@ var (
 	}
 
 	successfulJob = batchv1.Job{
-		ObjectMeta: v1.ObjectMeta{Name: "foo"},
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Status: batchv1.JobStatus{
 			Succeeded: 1,
 		},
@@ -208,7 +208,7 @@ func TestDuration(t *testing.T) {
 	past := now.Add(-d)
 
 	job := activeJob
-	job.Status.StartTime = &v1.Time{Time: past}
+	job.Status.StartTime = &metav1.Time{Time: past}
 
 	out := duration(job)
 	assert.Equal(t, "1 hour 2 minutes", out)
@@ -220,7 +220,7 @@ func TestAgeActiveJob(t *testing.T) {
 	past := now.Add(-d)
 
 	job := activeJob
-	job.Status.StartTime = &v1.Time{Time: past}
+	job.Status.StartTime = &metav1.Time{Time: past}
 
 	out := age(job)
 	assert.Equal(t, "2 minutes ago", out)
@@ -232,8 +232,8 @@ func TestAgeSuccessfulJob(t *testing.T) {
 	past := now.Add(-d)
 
 	job := successfulJob
-	job.Status.StartTime = &v1.Time{Time: past}
-	job.Status.CompletionTime = &v1.Time{Time: now}
+	job.Status.StartTime = &metav1.Time{Time: past}
+	job.Status.CompletionTime = &metav1.Time{Time: now}
 
 	out := age(job)
 	assert.Equal(t, "1 hour ago", out)
