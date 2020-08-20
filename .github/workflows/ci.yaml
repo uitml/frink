@@ -43,4 +43,4 @@ jobs:
       run: go mod download
 
     - name: Run tests
-      run: go test -race -covermode atomic
+      run: go test -race -covermode atomic ./...
