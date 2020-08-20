@@ -25,7 +25,7 @@ type KubeClient interface {
 
 // kubeContext represents a concrete Kubernetes API context.
 type kubeContext struct {
-	Clientset *kubernetes.Clientset
+	Clientset kubernetes.Interface
 	Namespace string
 }
 
