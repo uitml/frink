@@ -14,8 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeClient exposes simple and testable Kubernetes API abstractions.
-type KubeClient interface {
+// Client exposes high-level Kubernetes API abstractions.
+type Client interface {
 	CreateJob(job *batchv1.Job) error
 	DeleteJob(name string) error
 	GetJob(name string) (*batchv1.Job, error)
@@ -23,26 +23,27 @@ type KubeClient interface {
 	ListJobs() (*batchv1.JobList, error)
 }
 
-// kubeContext represents a concrete Kubernetes API context.
-type kubeContext struct {
+// NamespaceClient represents a namespaced Kubernetes API client.
+type NamespaceClient struct {
 	Clientset kubernetes.Interface
 	Namespace string
 }
 
-// Client returns a k8s client and namespace for the specified context.
-func Client(context, namespace string) (KubeClient, error) {
+// NewClient returns a Client the specified context and namespace.
+func NewClient(context, namespace string) (Client, error) {
 	config, namespace, err := buildClientConfig(context, namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
-	kubectx := &kubeContext{client, namespace}
-	return kubectx, nil
+	client := &NamespaceClient{clientset, namespace}
+
+	return client, nil
 }
 
 // buildClientConfig returns a complete client config and the namespace for the given context.

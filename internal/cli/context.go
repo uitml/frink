@@ -18,14 +18,15 @@ type CommandContext struct {
 	Err io.Writer
 
 	// Client can be used for interacting with the Kubernetes API.
-	Client k8s.KubeClient
+	Client k8s.Client
 }
 
 // CommandInitializer is an interface that is used to initialize a CommandContext.
 //
 // The most common thing to do during initialization is to set the Client (k8s.KubeClient) field.
 type CommandInitializer interface {
-	Initialize(*cobra.Command) error
+	// Initialize initializes the CommandContext, optionally using the cobra.Command flags, etc.
+	Initialize(cmd *cobra.Command) error
 }
 
 // Initialize is used to initialize the Client field on the CommandContext.
@@ -39,7 +40,7 @@ func (ctx *CommandContext) Initialize(cmd *cobra.Command) error {
 		return err
 	}
 
-	client, err := k8s.Client(cfg.Context, cfg.Namespace)
+	client, err := k8s.NewClient(cfg.Context, cfg.Namespace)
 	if err != nil {
 		return err
 	}
