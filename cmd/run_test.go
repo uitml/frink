@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uitml/frink/internal/cli"
-	"github.com/uitml/frink/internal/mock"
+	"github.com/uitml/frink/internal/k8s/fake"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,8 +27,8 @@ func TestRunRun(t *testing.T) {
 	cmd := newRunCmd()
 	cmd.SetOut(&out)
 
-	client := &mock.KubeClient{}
-	parser := &mock.JobParser{}
+	client := &fake.Client{}
+	parser := &fake.JobParser{}
 
 	ctx := &runContext{
 		CommandContext: cli.CommandContext{

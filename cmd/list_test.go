@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uitml/frink/internal/cli"
-	"github.com/uitml/frink/internal/mock"
+	"github.com/uitml/frink/internal/k8s/fake"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -44,10 +44,6 @@ var (
 	}
 )
 
-func jobList(jobs ...batchv1.Job) *batchv1.JobList {
-	return &batchv1.JobList{Items: jobs}
-}
-
 // Top-level functionality.
 
 func TestListPreRun(t *testing.T) {
@@ -60,7 +56,7 @@ func TestListPreRun(t *testing.T) {
 }
 
 func TestListRunBrokenClient(t *testing.T) {
-	client := &mock.KubeClient{}
+	client := &fake.Client{}
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
 			Client: client,
@@ -84,7 +80,7 @@ func TestListOutputWithNoJobs(t *testing.T) {
 	cmd := newListCmd()
 	cmd.SetOut(&out)
 
-	client := &mock.KubeClient{}
+	client := &fake.Client{}
 
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
@@ -92,7 +88,7 @@ func TestListOutputWithNoJobs(t *testing.T) {
 		},
 	}
 
-	client.On("ListJobs").Return(jobList(), nil)
+	client.On("ListJobs").Return([]batchv1.Job{}, nil)
 
 	err := ctx.Run(cmd, []string{})
 	assert.NoError(t, err)
@@ -106,7 +102,7 @@ func TestListOutputWithJobs(t *testing.T) {
 	cmd := newListCmd()
 	cmd.SetOut(&out)
 
-	client := &mock.KubeClient{}
+	client := &fake.Client{}
 
 	ctx := &listContext{
 		CommandContext: cli.CommandContext{
@@ -114,7 +110,7 @@ func TestListOutputWithJobs(t *testing.T) {
 		},
 	}
 
-	client.On("ListJobs").Return(jobList(successfulJob), nil)
+	client.On("ListJobs").Return([]batchv1.Job{successfulJob}, nil)
 
 	err := ctx.Run(cmd, []string{})
 	assert.NoError(t, err)

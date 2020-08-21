@@ -25,7 +25,7 @@ func TestListJobs(t *testing.T) {
 
 	jobs, err := client.ListJobs()
 	assert.NoError(t, err)
-	assert.Len(t, jobs.Items, 2)
+	assert.Len(t, jobs, 2)
 
 	// Respond to job listing with an error.
 	clientset.Fake.PrependReactor("list", "*", func(action kubetesting.Action) (bool, runtime.Object, error) {
