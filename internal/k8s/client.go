@@ -20,7 +20,7 @@ type Client interface {
 	DeleteJob(name string) error
 	GetJob(name string) (*batchv1.Job, error)
 	GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error)
-	ListJobs() (*batchv1.JobList, error)
+	ListJobs() ([]batchv1.Job, error)
 }
 
 // NamespaceClient represents a namespaced Kubernetes API client.

@@ -49,7 +49,7 @@ func (ctx *listContext) Run(cmd *cobra.Command, args []string) error {
 	defer w.Flush()
 
 	fmt.Fprintln(w, header())
-	for _, job := range jobs.Items {
+	for _, job := range jobs {
 		fmt.Fprintln(w, row(job))
 	}
 

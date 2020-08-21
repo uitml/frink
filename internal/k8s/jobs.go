@@ -28,13 +28,13 @@ var DefaultLogOptions = &corev1.PodLogOptions{
 }
 
 // ListJobs returns all jobs.
-func (client *NamespaceClient) ListJobs() (*batchv1.JobList, error) {
+func (client *NamespaceClient) ListJobs() ([]batchv1.Job, error) {
 	jobs, err := client.Clientset.BatchV1().Jobs(client.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	return jobs, nil
+	return jobs.Items, nil
 }
 
 // GetJob returns the job with the given name.
