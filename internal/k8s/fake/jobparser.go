@@ -9,8 +9,8 @@ type JobParser struct {
 	mock.Mock
 }
 
-func (p *JobParser) Parse(filename string) (*batchv1.Job, error) {
-	args := p.Called()
+func (p *JobParser) Parse(b []byte) (*batchv1.Job, error) {
+	args := p.Called(b)
 	job, _ := args.Get(0).(*batchv1.Job)
 
 	return job, args.Error(1)

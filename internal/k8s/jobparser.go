@@ -1,11 +1,9 @@
 package k8s
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
 	"regexp"
 
+	"github.com/spf13/afero"
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -16,41 +14,29 @@ type JobParser interface {
 
 type jobParser struct {
 	JobParser
+	Fs afero.Fs
 }
 
-func NewJobParser() JobParser {
-	return &jobParser{}
+func NewJobParser(fs afero.Fs) JobParser {
+	return &jobParser{Fs: fs}
 }
 
 func (p *jobParser) Parse(filename string) (*batchv1.Job, error) {
-	if _, err := os.Stat(filename); err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("specified file does not exist: %v", filename)
-		}
-
-		return nil, fmt.Errorf("unable to access file: %w", err)
-	}
-
-	return parseJob(filename)
-}
-
-func parseJob(file string) (*batchv1.Job, error) {
-	data, err := ioutil.ReadFile(file)
+	b, err := afero.ReadFile(p.Fs, filename)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Refactor this by extracting functions, etc.
 	var job *batchv1.Job
 	re := regexp.MustCompile(`apiVersion:`)
-	if re.Match(data) {
+	if re.Match(b) {
 		job = &batchv1.Job{}
-		if err := yaml.UnmarshalStrict(data, job); err != nil {
+		if err := yaml.UnmarshalStrict(b, job); err != nil {
 			return nil, err
 		}
 	} else {
 		simple := &SimpleJob{}
-		if err := yaml.UnmarshalStrict(data, simple); err != nil {
+		if err := yaml.UnmarshalStrict(b, simple); err != nil {
 			return nil, err
 		}
 		job = simple.Expand()

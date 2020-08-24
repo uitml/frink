@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/uitml/frink/internal/cli"
 	"github.com/uitml/frink/internal/k8s"
@@ -30,7 +31,8 @@ type runContext struct {
 }
 
 func newRunCmd() *cobra.Command {
-	parser := k8s.NewJobParser()
+	fs := afero.NewOsFs()
+	parser := k8s.NewJobParser(fs)
 	ctx := &runContext{JobParser: parser}
 
 	cmd := &cobra.Command{
