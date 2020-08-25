@@ -8,7 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/uitml/frink/internal/cli"
 	"github.com/uitml/frink/internal/k8s"
 	"github.com/uitml/frink/internal/k8s/retry"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,107 +23,114 @@ var backoff = wait.Backoff{
 	Steps:    1200,
 }
 
-var follow bool
+type runContext struct {
+	cli.CommandContext
+	JobParser k8s.JobParser
 
-var runCmd = &cobra.Command{
-	Use:   "run <file>",
-	Short: "Schedule a job on the cluster",
+	Follow bool
+}
 
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return fmt.Errorf("job specification file must be specified")
-		}
+func newRunCmd() *cobra.Command {
+	fs := afero.NewOsFs()
+	parser := k8s.NewJobParser(fs)
+	ctx := &runContext{JobParser: parser}
 
-		file := args[0]
-		if _, err := os.Stat(file); err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("specified file does not exist: %v", file)
-			}
+	cmd := &cobra.Command{
+		Use:   "run <file>",
+		Short: "Schedule a job on the cluster",
 
-			return fmt.Errorf("unable to access file: %w", err)
-		}
+		PreRunE: ctx.PreRun,
+		RunE:    ctx.Run,
+	}
 
-		job, err := k8s.ParseJob(file)
+	flags := cmd.Flags()
+	flags.BoolVarP(&ctx.Follow, "follow", "f", false, "wait for job to start, then stream logs")
+
+	return cmd
+}
+
+func (ctx *runContext) PreRun(cmd *cobra.Command, args []string) error {
+	return ctx.Initialize(cmd)
+}
+
+func (ctx *runContext) Run(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("job specification file must be specified")
+	}
+
+	job, err := ctx.JobParser.Parse(args[0])
+	if err != nil {
+		return fmt.Errorf("unable to parse job: %w", err)
+	}
+
+	// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
+	k8s.OverrideJobSpec(job)
+
+	if err := ctx.DeletePreviousJob(job.Name); err != nil {
+		return fmt.Errorf("unable to delete previous job: %w", err)
+	}
+
+	// Try to create the job using retry.
+	// This handles scenarios where an existing job is still being terminated, etc.
+	fmt.Fprintln(ctx.Out, "Creating job...")
+	err = retry.OnExists(backoff, func() error { return ctx.Client.CreateJob(job) })
+	if err != nil {
+		return fmt.Errorf("unable to create job: %w", err)
+	}
+
+	if !ctx.Follow {
+		return nil
+	}
+
+	if err := ctx.WaitUntilJobStarted(job.Name); err != nil {
+		return fmt.Errorf("timed out waiting for job to start: %w", err)
+	}
+
+	// TODO: Ensure nil references are properly handled in this block.
+	err = retry.OnError(backoff, apierrors.IsBadRequest, func() error {
+		req, err := ctx.Client.GetJobLogs(job.Name, k8s.DefaultLogOptions)
 		if err != nil {
-			return fmt.Errorf("unable to parse job: %w", err)
+			return errors.Unwrap(err)
 		}
 
-		// TODO: Reconsider this? Many reasons to avoid this; should be challenged.
-		k8s.OverrideJobSpec(job)
-
-		if err := deletePreviousJob(job.Name); err != nil {
-			return fmt.Errorf("unable to delete previous job: %w", err)
+		if req == nil {
+			return fmt.Errorf("unable to get logs: request not returned (nil)")
 		}
 
-		// Try to create the job using retry.
-		// This handles scenarios where an existing job is still being terminated, etc.
-		fmt.Println("Creating job...")
-		err = retry.OnExists(backoff, func() error { return client.CreateJob(job) })
+		stream, err := req.Stream()
 		if err != nil {
-			return fmt.Errorf("unable to create job: %w", err)
+			return err
 		}
+		defer stream.Close()
 
-		if !follow {
-			return nil
-		}
-
-		if err := waitUntilStarted(job.Name); err != nil {
-			return fmt.Errorf("timed out waiting for job to start: %w", err)
-		}
-
-		// TODO: Ensure nil references are properly handled in this block.
-		err = retry.OnError(backoff, apierrors.IsBadRequest, func() error {
-			req, err := client.GetJobLogs(job.Name, k8s.DefaultLogOptions)
-			if err != nil {
-				return errors.Unwrap(err)
-			}
-
-			if req == nil {
-				return fmt.Errorf("unable to get logs: request not returned (nil)")
-			}
-
-			stream, err := req.Stream()
-			if err != nil {
-				return err
-			}
-			defer stream.Close()
-
-			reader := bufio.NewReader(stream)
-			if _, err := io.Copy(os.Stdout, reader); err != nil {
-				return err
-			}
-
-			return nil
-		})
-		if err != nil {
+		reader := bufio.NewReader(stream)
+		if _, err := io.Copy(os.Stdout, reader); err != nil {
 			return err
 		}
 
 		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(runCmd)
-
-	flags := runCmd.Flags()
-	flags.BoolVarP(&follow, "follow", "f", false, "wait for job to start, then stream logs")
-}
-
-func deletePreviousJob(name string) error {
-	job, err := client.GetJob(name)
+	})
 	if err != nil {
-		return fmt.Errorf("unable to get previous job: %w", err)
+		return err
+	}
+
+	return nil
+}
+
+func (ctx *runContext) DeletePreviousJob(name string) error {
+	job, err := ctx.Client.GetJob(name)
+	if err != nil {
+		return err
 	}
 
 	if job != nil {
-		fmt.Println("Deleting previous job...")
-		err = client.DeleteJob(job.Name)
+		fmt.Fprintln(ctx.Out, "Deleting previous job...")
+		err = ctx.Client.DeleteJob(job.Name)
 		if err != nil {
 			return err
 		}
 
-		if err := waitUntilDeleted(job.Name); err != nil {
+		if err := ctx.WaitUntilJobDeleted(job.Name); err != nil {
 			return err
 		}
 	}
@@ -129,9 +138,9 @@ func deletePreviousJob(name string) error {
 	return nil
 }
 
-func waitUntilDeleted(name string) error {
+func (ctx *runContext) WaitUntilJobDeleted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		job, err := client.GetJob(name)
+		job, err := ctx.Client.GetJob(name)
 		if err != nil {
 			return false, err
 		}
@@ -142,9 +151,9 @@ func waitUntilDeleted(name string) error {
 	return err
 }
 
-func waitUntilStarted(name string) error {
+func (ctx *runContext) WaitUntilJobStarted(name string) error {
 	err := wait.Poll(100*time.Millisecond, 120*time.Second, func() (bool, error) {
-		job, err := client.GetJob(name)
+		job, err := ctx.Client.GetJob(name)
 		if err != nil {
 			return false, err
 		}

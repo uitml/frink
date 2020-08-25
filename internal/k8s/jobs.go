@@ -2,16 +2,14 @@ package k8s
 
 import (
 	"fmt"
-	"io/ioutil"
-	"regexp"
 
+	"github.com/uitml/frink/internal/util"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/yaml"
 )
 
 var defaultTerminationMessagePolicy = corev1.TerminationMessageFallbackToLogsOnError
@@ -19,30 +17,28 @@ var defaultTerminationMessagePolicy = corev1.TerminationMessageFallbackToLogsOnE
 var (
 	// Do not restart failing jobs.
 	defaultRestartPolicy = corev1.RestartPolicyOnFailure
-	defaultBackoffLimit  = int32Ptr(0)
+	defaultBackoffLimit  = util.Int32Ptr(0)
 )
 
 // DefaultLogOptions is the default set of options used when retrieving logs.
 var DefaultLogOptions = &corev1.PodLogOptions{
-	// TODO: Make these configurable via flags?
 	Follow: true,
-	// TailLines: int64Ptr(20),
 }
 
 // ListJobs returns all jobs.
-func (kubectx *kubeContext) ListJobs() (*batchv1.JobList, error) {
-	jobs, err := kubectx.Clientset.BatchV1().Jobs(kubectx.Namespace).List(metav1.ListOptions{})
+func (client *NamespaceClient) ListJobs() ([]batchv1.Job, error) {
+	jobs, err := client.Clientset.BatchV1().Jobs(client.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	return jobs, nil
+	return jobs.Items, nil
 }
 
 // GetJob returns the job with the given name.
-func (kubectx *kubeContext) GetJob(name string) (*batchv1.Job, error) {
+func (client *NamespaceClient) GetJob(name string) (*batchv1.Job, error) {
 	getOptions := metav1.GetOptions{}
-	job, err := kubectx.Clientset.BatchV1().Jobs(kubectx.Namespace).Get(name, getOptions)
+	job, err := client.Clientset.BatchV1().Jobs(client.Namespace).Get(name, getOptions)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
@@ -55,14 +51,14 @@ func (kubectx *kubeContext) GetJob(name string) (*batchv1.Job, error) {
 }
 
 // DeleteJob deletes the job with the given name.
-func (kubectx *kubeContext) DeleteJob(name string) error {
+func (client *NamespaceClient) DeleteJob(name string) error {
 	deletePolicy := metav1.DeletePropagationForeground
 	deleteOptions := &metav1.DeleteOptions{
-		GracePeriodSeconds: int64Ptr(0),
+		GracePeriodSeconds: util.Int64Ptr(0),
 		PropagationPolicy:  &deletePolicy,
 	}
 
-	err := kubectx.Clientset.BatchV1().Jobs(kubectx.Namespace).Delete(name, deleteOptions)
+	err := client.Clientset.BatchV1().Jobs(client.Namespace).Delete(name, deleteOptions)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -71,22 +67,22 @@ func (kubectx *kubeContext) DeleteJob(name string) error {
 }
 
 // CreateJob creates a job with the given specification.
-func (kubectx *kubeContext) CreateJob(job *batchv1.Job) error {
-	_, err := kubectx.Clientset.BatchV1().Jobs(kubectx.Namespace).Create(job)
+func (client *NamespaceClient) CreateJob(job *batchv1.Job) error {
+	_, err := client.Clientset.BatchV1().Jobs(client.Namespace).Create(job)
 	return err
 }
 
 // GetJobLogs returns the pod logs for the job with the given name.
-func (kubectx *kubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
+func (client *NamespaceClient) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
 	getOptions := metav1.GetOptions{}
-	job, err := kubectx.Clientset.BatchV1().Jobs(kubectx.Namespace).Get(name, getOptions)
+	job, err := client.Clientset.BatchV1().Jobs(client.Namespace).Get(name, getOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get job: %w", err)
 	}
 
 	selector := labels.Set(job.Spec.Selector.MatchLabels).String()
 	listOptions := metav1.ListOptions{LabelSelector: selector}
-	pods, err := kubectx.Clientset.CoreV1().Pods(kubectx.Namespace).List(listOptions)
+	pods, err := client.Clientset.CoreV1().Pods(client.Namespace).List(listOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pods for job: %w", err)
 	}
@@ -98,35 +94,9 @@ func (kubectx *kubeContext) GetJobLogs(name string, opts *corev1.PodLogOptions) 
 
 	// TODO: Add support for multiple pods?
 	pod := pods.Items[0]
-	req := kubectx.Clientset.CoreV1().Pods(kubectx.Namespace).GetLogs(pod.Name, opts)
+	req := client.Clientset.CoreV1().Pods(client.Namespace).GetLogs(pod.Name, opts)
 
 	return req, nil
-}
-
-// ParseJob parses the file and returns the corresponding job.
-func ParseJob(file string) (*batchv1.Job, error) {
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Refactor this by extracting functions, etc.
-	var job *batchv1.Job
-	re := regexp.MustCompile(`apiVersion:`)
-	if re.Match(data) {
-		job = &batchv1.Job{}
-		if err := yaml.UnmarshalStrict(data, job); err != nil {
-			return nil, err
-		}
-	} else {
-		simple := &SimpleJob{}
-		if err := yaml.UnmarshalStrict(data, simple); err != nil {
-			return nil, err
-		}
-		job = simple.Expand()
-	}
-
-	return job, nil
 }
 
 // OverrideJobSpec removes zero quantity resources, and sets other important defaults.
@@ -159,6 +129,3 @@ func setRestartPolicy(job *batchv1.Job) {
 	job.Spec.BackoffLimit = defaultBackoffLimit
 	job.Spec.Template.Spec.RestartPolicy = defaultRestartPolicy
 }
-
-func int32Ptr(i int32) *int32 { return &i }
-func int64Ptr(i int64) *int64 { return &i }

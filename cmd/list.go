@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -10,38 +9,51 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
+	"github.com/uitml/frink/internal/cli"
 	batchv1 "k8s.io/api/batch/v1"
 )
 
-var showAll bool
+type listContext struct {
+	cli.CommandContext
 
-var listCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List jobs",
-
-	RunE: func(cmd *cobra.Command, args []string) error {
-		jobs, err := client.ListJobs()
-		if err != nil {
-			return fmt.Errorf("could not list jobs: %w", err)
-		}
-
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-		defer w.Flush()
-
-		fmt.Fprintln(w, header())
-		for _, job := range jobs.Items {
-			fmt.Fprintln(w, row(job))
-		}
-
-		return nil
-	},
+	ShowAll bool
 }
 
-func init() {
-	rootCmd.AddCommand(listCmd)
+func newListCmd() *cobra.Command {
+	ctx := &listContext{}
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "List jobs",
 
-	flags := listCmd.Flags()
-	flags.BoolVarP(&showAll, "all", "a", false, "show all jobs; active and terminated")
+		PreRunE: ctx.PreRun,
+		RunE:    ctx.Run,
+	}
+
+	flags := cmd.Flags()
+	flags.BoolVarP(&ctx.ShowAll, "all", "a", false, "show all jobs; active and terminated")
+
+	return cmd
+}
+
+func (ctx *listContext) PreRun(cmd *cobra.Command, args []string) error {
+	return ctx.Initialize(cmd)
+}
+
+func (ctx *listContext) Run(cmd *cobra.Command, args []string) error {
+	jobs, err := ctx.Client.ListJobs()
+	if err != nil {
+		return fmt.Errorf("could not list jobs: %w", err)
+	}
+
+	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 3, ' ', 0)
+	defer w.Flush()
+
+	fmt.Fprintln(w, header())
+	for _, job := range jobs {
+		fmt.Fprintln(w, row(job))
+	}
+
+	return nil
 }
 
 func header() string {
@@ -72,10 +84,10 @@ func status(job batchv1.Job) string {
 	switch {
 	case job.Status.Active > 0:
 		return "Active"
-	case job.Spec.Completions == nil || *job.Spec.Completions == job.Status.Succeeded:
-		return "Succeeded"
 	case job.Status.Failed > 0:
 		return "Failed"
+	case job.Spec.Completions == nil && job.Status.Succeeded > 0 || job.Spec.Completions != nil && *job.Spec.Completions == job.Status.Succeeded:
+		return "Succeeded"
 	}
 
 	return "Stopped"

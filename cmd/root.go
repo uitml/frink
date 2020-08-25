@@ -2,53 +2,40 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/uitml/frink/internal/cli"
-	"github.com/uitml/frink/internal/k8s"
 )
 
-// NOTE: Global package state; bad idea, but works for the time being.
-var client k8s.KubeClient
+func newRootCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "frink",
+		Short: "Frink simplifies your Springfield workflows",
 
-var rootCmd = &cobra.Command{
-	Use:   "frink",
-	Short: "Frink simplifies your Springfield workflows",
+		// Do not display usage when an error occurs.
+		SilenceUsage: true,
+	}
 
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		context := viper.GetString("context")
-		namespace := viper.GetString("namespace")
-
-		kubectx, err := k8s.Client(context, namespace)
-		if err != nil {
-			return fmt.Errorf("unable to get kube client: %w", err)
-		}
-
-		client = kubectx
-		return nil
-	},
-
-	// Do not display usage when an error occurs.
-	SilenceUsage: true,
-}
-
-func init() {
-	cobra.OnInitialize(cli.InitConfig)
-
-	pflags := rootCmd.PersistentFlags()
+	pflags := cmd.PersistentFlags()
 	pflags.String("context", "", "name of the kubeconfig context to use")
 	pflags.StringP("namespace", "n", "", "cluster namespace to use")
-	viper.BindPFlags(pflags)
 
-	cli.DisableFlagsInUseLine(rootCmd)
+	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newLogsCmd())
+	cmd.AddCommand(newRemoveCmd())
+	cmd.AddCommand(newRunCmd())
+	cmd.AddCommand(newVersionCmd())
+
+	cli.DisableFlagsInUseLine(cmd)
+
+	return cmd
 }
 
-// Execute executes the root command.
+// Execute executes the root command using os.Args, running through the command tree and invoking the matching subcommand.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	cmd := newRootCmd()
+	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
