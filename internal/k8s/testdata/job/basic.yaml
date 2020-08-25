@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: foo
+spec:
+  template:
+    spec:
+      containers:
+      - name: foo
+        image: ubuntu:latest
+        workingDir: /storage
+        command: ["echo", "hello world"]

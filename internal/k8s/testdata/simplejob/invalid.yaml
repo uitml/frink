@@ -1,0 +1,4 @@
+naem: foo # NOTE(thomasjo): Deliberate typo
+image: ubuntu:latest
+workingDir: /storage
+command: ["echo", "hello world"]
