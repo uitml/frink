@@ -6,24 +6,6 @@ spec:
   template:
     spec:
       containers:
-      - name: a-container
+      - name: foo
         image: ubuntu:latest
-        workingDir: /storage
         command: ["echo", "hello world"]
-        envFrom:
-        - secretRef:
-            name: some-secret
-        volumeMounts:
-        - name: storage
-          mountPath: /storage
-        - name: shm
-          mountPath: /dev/shm
-      volumes:
-      - name: storage
-        persistentVolumeClaim:
-            claimName: storage
-      - name: shm
-        emptyDir:
-          medium: Memory
-      restartPolicy: OnFailure
-  backoffLimit: 0
