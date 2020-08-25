@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"os"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -51,6 +52,6 @@ func TestParseMissingFile(t *testing.T) {
 
 	job, err := parser.Parse("missing.yaml")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no such file or directory")
+	assert.IsType(t, &os.PathError{}, err)
 	assert.Nil(t, job)
 }
