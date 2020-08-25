@@ -22,9 +22,7 @@ var (
 
 // DefaultLogOptions is the default set of options used when retrieving logs.
 var DefaultLogOptions = &corev1.PodLogOptions{
-	// TODO: Make these configurable via flags?
 	Follow: true,
-	// TailLines: int64Ptr(20),
 }
 
 // ListJobs returns all jobs.
