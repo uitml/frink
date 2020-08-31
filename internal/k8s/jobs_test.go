@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -74,7 +75,7 @@ func TestCreateJob(t *testing.T) {
 	err := client.CreateJob(&bar)
 	assert.NoError(t, err)
 
-	job, err := client.Clientset.BatchV1().Jobs("").Get("bar", v1.GetOptions{})
+	job, err := client.Clientset.BatchV1().Jobs("").Get(context.TODO(), "bar", v1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, &bar, job)
 }
@@ -87,9 +88,9 @@ func TestDeleteJob(t *testing.T) {
 		Clientset: clientset,
 	}
 
-	before, _ := client.Clientset.BatchV1().Jobs("").List(v1.ListOptions{})
+	before, _ := client.Clientset.BatchV1().Jobs("").List(context.TODO(), v1.ListOptions{})
 	err := client.DeleteJob("foo")
-	after, _ := client.Clientset.BatchV1().Jobs("").List(v1.ListOptions{})
+	after, _ := client.Clientset.BatchV1().Jobs("").List(context.TODO(), v1.ListOptions{})
 
 	assert.NoError(t, err)
 	assert.Len(t, before.Items, 2)

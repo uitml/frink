@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -49,7 +50,7 @@ func (ctx *logsContext) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to get logs: request not returned (nil)")
 	}
 
-	stream, err := req.Stream()
+	stream, err := req.Stream(context.TODO())
 	if err != nil {
 		return fmt.Errorf("unable to stream logs: %w", err)
 	}

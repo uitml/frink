@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/uitml/frink/internal/util"
@@ -27,7 +28,7 @@ var DefaultLogOptions = &corev1.PodLogOptions{
 
 // ListJobs returns all jobs.
 func (client *NamespaceClient) ListJobs() ([]batchv1.Job, error) {
-	jobs, err := client.Clientset.BatchV1().Jobs(client.Namespace).List(metav1.ListOptions{})
+	jobs, err := client.Clientset.BatchV1().Jobs(client.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func (client *NamespaceClient) ListJobs() ([]batchv1.Job, error) {
 // GetJob returns the job with the given name.
 func (client *NamespaceClient) GetJob(name string) (*batchv1.Job, error) {
 	getOptions := metav1.GetOptions{}
-	job, err := client.Clientset.BatchV1().Jobs(client.Namespace).Get(name, getOptions)
+	job, err := client.Clientset.BatchV1().Jobs(client.Namespace).Get(context.TODO(), name, getOptions)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
@@ -53,12 +54,12 @@ func (client *NamespaceClient) GetJob(name string) (*batchv1.Job, error) {
 // DeleteJob deletes the job with the given name.
 func (client *NamespaceClient) DeleteJob(name string) error {
 	deletePolicy := metav1.DeletePropagationForeground
-	deleteOptions := &metav1.DeleteOptions{
+	deleteOptions := metav1.DeleteOptions{
 		GracePeriodSeconds: util.Int64Ptr(0),
 		PropagationPolicy:  &deletePolicy,
 	}
 
-	err := client.Clientset.BatchV1().Jobs(client.Namespace).Delete(name, deleteOptions)
+	err := client.Clientset.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), name, deleteOptions)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -68,21 +69,22 @@ func (client *NamespaceClient) DeleteJob(name string) error {
 
 // CreateJob creates a job with the given specification.
 func (client *NamespaceClient) CreateJob(job *batchv1.Job) error {
-	_, err := client.Clientset.BatchV1().Jobs(client.Namespace).Create(job)
+	opts := metav1.CreateOptions{}
+	_, err := client.Clientset.BatchV1().Jobs(client.Namespace).Create(context.TODO(), job, opts)
 	return err
 }
 
 // GetJobLogs returns the pod logs for the job with the given name.
 func (client *NamespaceClient) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest.Request, error) {
 	getOptions := metav1.GetOptions{}
-	job, err := client.Clientset.BatchV1().Jobs(client.Namespace).Get(name, getOptions)
+	job, err := client.Clientset.BatchV1().Jobs(client.Namespace).Get(context.TODO(), name, getOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get job: %w", err)
 	}
 
 	selector := labels.Set(job.Spec.Selector.MatchLabels).String()
 	listOptions := metav1.ListOptions{LabelSelector: selector}
-	pods, err := client.Clientset.CoreV1().Pods(client.Namespace).List(listOptions)
+	pods, err := client.Clientset.CoreV1().Pods(client.Namespace).List(context.TODO(), listOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pods for job: %w", err)
 	}
