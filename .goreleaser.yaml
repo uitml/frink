@@ -22,7 +22,7 @@ builds:
 
 archives:
 - format: binary
-  name_template: '{{ .ProjectName }}-{{ .Os }}'
+  name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
   replacements:
     darwin: macos
 
