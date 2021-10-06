@@ -20,7 +20,7 @@ func TestRootNoCommand(t *testing.T) {
 func TestRootUnknownCommand(t *testing.T) {
 	var out strings.Builder
 	cmd := newRootCmd()
-	cmd.SetOut(&out)
+	cmd.SetErr(&out)
 	cmd.SetArgs([]string{"foo"})
 	err := cmd.Execute()
 
