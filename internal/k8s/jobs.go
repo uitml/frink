@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/uitml/frink/internal/util"
 	batchv1 "k8s.io/api/batch/v1"
@@ -130,4 +131,80 @@ func setTerminationPolicy(container *corev1.Container) {
 func setRestartPolicy(job *batchv1.Job) {
 	job.Spec.BackoffLimit = defaultBackoffLimit
 	job.Spec.Template.Spec.RestartPolicy = defaultRestartPolicy
+}
+
+func (client *NamespaceClient) GetPodEvents(podName string) (string, error) {
+	listOptions := metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("involvedObject.name=%s,involvedObject.kind=Pod", podName),
+	}
+	events, err := client.Clientset.CoreV1().Events(client.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return "", fmt.Errorf("unable to list events for pod %s: %w", podName, err)
+	}
+
+	var eventDetails strings.Builder
+	for _, event := range events.Items {
+		eventDetails.WriteString(fmt.Sprintf("%s %s: %s\n", event.CreationTimestamp, event.Reason, event.Message))
+	}
+
+	return eventDetails.String(), nil
+}
+
+func (client *NamespaceClient) GetJobEvents(jobName string) (string, error) {
+	listOptions := metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("involvedObject.name=%s,involvedObject.kind=Job", jobName),
+	}
+	events, err := client.Clientset.CoreV1().Events(client.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return "", fmt.Errorf("unable to list events for job %s: %w", jobName, err)
+	}
+
+	var eventDetails strings.Builder
+	for _, event := range events.Items {
+		eventDetails.WriteString(fmt.Sprintf("%s %s: %s\n", event.CreationTimestamp, event.Reason, event.Message))
+	}
+
+	return eventDetails.String(), nil
+}
+
+func (client *NamespaceClient) GetPodsFromJob(jobName string) ([]string, error) {
+	job, err := client.GetJob(jobName)
+	if err != nil {
+		return nil, err
+	}
+	if job == nil {
+		return nil, fmt.Errorf("job %s not found", jobName)
+	}
+
+	selector := labels.Set(job.Spec.Selector.MatchLabels).String()
+	listOptions := metav1.ListOptions{LabelSelector: selector}
+	pods, err := client.Clientset.CoreV1().Pods(client.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	var podNames []string
+	for _, pod := range pods.Items {
+		podNames = append(podNames, pod.Name)
+	}
+
+	return podNames, nil
+}
+
+func (client *NamespaceClient) GetJobFromPod(podName string) (string, error) {
+	pod, err := client.Clientset.CoreV1().Pods(client.Namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if pod == nil {
+		return "", fmt.Errorf("pod %s not found", podName)
+	}
+
+	// Assuming the job name is stored in the pod's labels under a specific key
+	jobName, ok := pod.Labels["job-name"]
+	if !ok {
+		return "", fmt.Errorf("no job associated with pod %s", podName)
+	}
+
+	return jobName, nil
 }
