@@ -23,9 +23,7 @@ builds:
 
 archives:
 - format: binary
-  name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
-  replacements:
-    darwin: macos
+  name_template: '{{ .ProjectName }}-{{- if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ .Arch }}'
 
 checksum:
   name_template: 'checksums.txt'
@@ -34,4 +32,4 @@ snapshot:
   name_template: '{{ replace .Tag "v" "" }}-{{ .ShortCommit }}'
 
 changelog:
-  skip: true
+  disable: true
