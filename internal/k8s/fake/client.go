@@ -51,3 +51,40 @@ func (client *Client) GetJobLogs(name string, opts *corev1.PodLogOptions) (*rest
 
 	return req, args.Error(1)
 }
+
+// GetPodEvents simulates returning a formatted string of events for a given Pod.
+func (client *Client) GetPodEvents(podName string) (string, error) {
+	args := client.Called(podName)
+	var out string
+	if v := args.Get(0); v != nil {
+		out, _ = v.(string)
+	}
+	return out, args.Error(1)
+}
+// GetJobEvents simulates returning a formatted string of events for a given Job.
+func (client *Client) GetJobEvents(jobName string) (string, error) {
+	args := client.Called(jobName)
+	var out string
+	if v := args.Get(0); v != nil {
+		out, _ = v.(string)
+	}
+	return out, args.Error(1)
+}
+// GetPodsFromJob simulates returning the Pod names created by a Job.
+func (client *Client) GetPodsFromJob(jobName string) ([]string, error) {
+	args := client.Called(jobName)
+	var names []string
+	if v := args.Get(0); v != nil {
+		names, _ = v.([]string)
+	}
+	return names, args.Error(1)
+}
+// GetJobFromPod simulates returning the Job name associated with a Pod.
+func (client *Client) GetJobFromPod(podName string) (string, error) {
+	args := client.Called(podName)
+	var jobName string
+	if v := args.Get(0); v != nil {
+		jobName, _ = v.(string)
+	}
+	return jobName, args.Error(1)
+}
