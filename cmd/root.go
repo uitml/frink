@@ -27,6 +27,7 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newRunCmd())
 	cmd.AddCommand(newVersionCmd())
 	cmd.AddCommand(newDebugCmd())
+	cmd.AddCommand(newGPUCmd())
 	cli.DisableFlagsInUseLine(cmd)
 
 	return cmd
