@@ -25,7 +25,7 @@ type gpuContext struct {
 func newGPUCmd() *cobra.Command {
 	ctx := &gpuContext{
 		Format:  "table",
-		Timeout: 5 * time.Second,
+		Timeout: 30 * time.Second,
 	}
 	cmd := &cobra.Command{
 		Use:   "gpu",
@@ -40,7 +40,7 @@ func newGPUCmd() *cobra.Command {
 	flags.StringVar(&ctx.Format, "format", "table", "Output format: table|oneline")
 	flags.BoolVar(&ctx.Color, "color", false, "Enable ANSI colors")
 	flags.IntVar(&ctx.Limit, "limit", 0, "Limit number of nodes (only for --format=oneline)")
-	flags.DurationVar(&ctx.Timeout, "timeout", 5*time.Second, "HTTP request timeout")
+	flags.DurationVar(&ctx.Timeout, "timeout", 30*time.Second, "HTTP request timeout")
 	return cmd
 }
 func (ctx *gpuContext) Run(cmd *cobra.Command, args []string) error {
